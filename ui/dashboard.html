@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Performance Dashboard</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="welcomeMsg"></span>
+                <button onclick="logout()" style="background: #e74c3c; width: auto;">Logout</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="row">
+                <!-- Profile & Notifications -->
+                <div class="col">
+                    <div class="card">
+                        <h3>Student Profile</h3>
+                        <div id="profileInfo">Loading...</div>
+                    </div>
+                    
+                    <div class="card" style="background-color: #fff8e1; border-left: 5px solid #f1c40f;">
+                        <h3>Notification Feed</h3>
+                        <ul id="notificationList" class="list-group" style="max-height: 200px;">
+                            <li>Loading alerts...</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Grades -->
+                <div class="col">
+                    <div class="card">
+                        <h3>Grade Report Card</h3>
+                        <ul id="gradeList" class="list-group">
+                            <li>Loading grades...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        // Auth Check
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || (user.role !== 'STUDENT' && user.role !== 'PARENT')) window.location.href = 'login.html';
+        document.getElementById('welcomeMsg').textContent = `Welcome, ${user.name} (${user.role})`;
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // Logic
+        const profileInfo = document.getElementById('profileInfo');
+        const notificationList = document.getElementById('notificationList');
+        const gradeList = document.getElementById('gradeList');
+
+        // Determine whose data to show
+        // If Parent, we should ideally let them select a child, but for prototype we'll just show the first child found or assume they are linked.
+        // To keep it simple: If Student, show own data. If Parent, show data for *all* linked students (or just one).
+        // Let's simplify: If Parent, we need to find their children.
+        // Since the API is simple, let's just assume the logged in user is the target for notifications, 
+        // and if it's a parent, we might need an extra step.
+        // BUT, the prompt says "Student Profile... Grade Report Card".
+        // Let's assume for this prototype that if I am a Parent, I see my notifications.
+        // If I am a Student, I see my grades.
+        // Actually, let's try to show grades for the student associated with the user.
+        
+        async function init() {
+            profileInfo.innerHTML = `
+                <p><strong>Name:</strong> ${user.name}</p>
+                <p><strong>Email:</strong> ${user.email}</p>
+                <p><strong>Role:</strong> ${user.role}</p>
+                <p><strong>ID:</strong> ${user.id}</p>
+            `;
+
+            loadNotifications();
+
+            if (user.role === 'STUDENT') {
+                loadGrades(user.id);
+            } else if (user.role === 'PARENT') {
+                // For prototype simplicity, we need to find the student ID linked to this parent.
+                // We don't have a direct "get children" endpoint easily exposed without filtering users.
+                // Let's fetch all students and find the one with this parentId.
+                try {
+                    const res = await fetch('/api/users?role=STUDENT');
+                    const students = await res.json();
+                    const children = students.filter(s => s.parentId === user.id);
+                    
+                    if (children.length > 0) {
+                        // Just show the first child's grades for now
+                        const child = children[0];
+                        profileInfo.innerHTML += `<hr><p><strong>Viewing Child:</strong> ${child.name}</p>`;
+                        loadGrades(child.id);
+                    } else {
+                        gradeList.innerHTML = '<li>No children found linked to this account.</li>';
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        async function loadNotifications() {
+            try {
+                const res = await fetch(`/api/notifications/${user.id}`);
+                const notes = await res.json();
+                notificationList.innerHTML = '';
+                if (notes.length === 0) {
+                    notificationList.innerHTML = '<li>No recent alerts.</li>';
+                    return;
+                }
+                notes.forEach(n => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <small style="color: #888;">${new Date(n.createdAt).toLocaleTimeString()}</small><br>
+                        ${n.message}
+                    `;
+                    notificationList.appendChild(li);
+                });
+            } catch (e) {
+                notificationList.innerHTML = 'Error loading notifications.';
+            }
+        }
+
+        async function loadGrades(studentId) {
+            try {
+                const res = await fetch(`/api/grades/${studentId}`);
+                const grades = await res.json();
+                gradeList.innerHTML = '';
+                if (grades.length === 0) {
+                    gradeList.innerHTML = '<li>No grades recorded yet.</li>';
+                    return;
+                }
+                grades.forEach(g => {
+                    const li = document.createElement('li');
+                    li.className = 'grade-item';
+                    li.innerHTML = `
+                        <span>${g.subject}</span>
+                        <span class="grade-score">${g.score}</span>
+                    `;
+                    gradeList.appendChild(li);
+                });
+            } catch (e) {
+                gradeList.innerHTML = 'Error loading grades.';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

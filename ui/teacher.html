@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Teacher Dashboard</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="welcomeMsg"></span>
+                <button onclick="logout()" style="background: #e74c3c; width: auto;">Logout</button>
+            </div>
+        </header>
+
+        <main>
+            <section>
+                <h2>Academic Management (Observer Pattern)</h2>
+                <div class="row">
+                    <div class="col">
+                        <div class="card">
+                            <h3>Class Overview</h3>
+                            <p>Select a student to grade.</p>
+                            <ul id="studentList" class="list-group"></ul>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card">
+                            <h3>Add Grade</h3>
+                            <p id="selectedStudentName">Select a student first</p>
+                            <form id="addGradeForm" style="display:none;">
+                                <input type="hidden" id="gradeStudentId">
+                                <input type="text" id="gradeSubject" placeholder="Subject (e.g. Math)" required>
+                                <input type="number" id="gradeScore" placeholder="Score (0-100)" min="0" max="100" required>
+                                <button type="submit">Submit Grade</button>
+                            </form>
+                            <p style="font-size: 0.8em; color: #666; margin-top: 10px;">
+                                * Submitting a grade triggers the Observer Pattern (Email & Portal Notification).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>
+        // Auth Check
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.role !== 'TEACHER') window.location.href = 'login.html';
+        document.getElementById('welcomeMsg').textContent = `Welcome, ${user.name}`;
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // Logic
+        const studentList = document.getElementById('studentList');
+        const addGradeForm = document.getElementById('addGradeForm');
+        const selectedStudentName = document.getElementById('selectedStudentName');
+        const gradeStudentId = document.getElementById('gradeStudentId');
+
+        async function loadStudents() {
+            studentList.innerHTML = 'Loading...';
+            try {
+                const res = await fetch('/api/users?role=STUDENT');
+                const students = await res.json();
+                studentList.innerHTML = '';
+                students.forEach(s => {
+                    const li = document.createElement('li');
+                    li.textContent = `${s.name}`;
+                    li.onclick = () => selectStudent(s);
+                    studentList.appendChild(li);
+                });
+            } catch (e) {
+                studentList.innerHTML = 'Error loading students';
+            }
+        }
+
+        function selectStudent(student) {
+            selectedStudentName.textContent = `Grading: ${student.name}`;
+            gradeStudentId.value = student.id;
+            addGradeForm.style.display = 'flex';
+            
+            // Highlight
+            Array.from(studentList.children).forEach(c => c.classList.remove('active'));
+            // (Simple highlight logic omitted for brevity, assumes click target)
+        }
+
+        addGradeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const studentId = gradeStudentId.value;
+            const subject = document.getElementById('gradeSubject').value;
+            const score = document.getElementById('gradeScore').value;
+
+            try {
+                const res = await fetch('/api/grades', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId, subject, score })
+                });
+
+                if (res.ok) {
+                    alert('Grade added! Observers notified.');
+                    e.target.reset();
+                } else {
+                    alert('Error adding grade');
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        loadStudents();
+    </script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container" style="max-width: 400px; margin-top: 100px;">
+        <header>
+            <h1>SMS Login</h1>
+        </header>
+        <div class="card">
+            <form id="loginForm">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <div id="errorMsg" style="color: red; margin-top: 10px; display: none;"></div>
+        </div>
+        <div style="margin-top: 20px; font-size: 0.9em; color: #666;">
+            <p><strong>Demo Credentials:</strong></p>
+            <ul>
+                <li>Admin: admin@school.com / admin123</li>
+                <li>Teacher: edna@school.com / teacher123</li>
+                <li>Parent: homer@school.com / parent123</li>
+                <li>Student: bart@school.com / student123</li>
+            </ul>
+        </div>
+    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (res.ok) {
+                    const user = await res.json();
+                    localStorage.setItem('user', JSON.stringify(user));
+                    
+                    // Redirect based on role
+                    switch(user.role) {
+                        case 'ADMIN': window.location.href = 'admin.html'; break;
+                        case 'TEACHER': window.location.href = 'teacher.html'; break;
+                        case 'STUDENT': 
+                        case 'PARENT': window.location.href = 'dashboard.html'; break;
+                        default: errorMsg.textContent = 'Unknown role'; errorMsg.style.display = 'block';
+                    }
+                } else {
+                    errorMsg.textContent = 'Invalid credentials';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                console.error(err);
+                errorMsg.textContent = 'Login failed';
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
