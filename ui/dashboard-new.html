@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Dashboard | Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        
+        /* Smooth transitions */
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(0,0,0,0.1); }
+        
+        /* Sparkline animation */
+        @keyframes sparkline-draw {
+            from { stroke-dashoffset: 200; }
+            to { stroke-dashoffset: 0; }
+        }
+        .sparkline { stroke-dasharray: 200; animation: sparkline-draw 1.5s ease-out forwards; }
+        
+        /* Progress ring animation */
+        @keyframes progress-fill {
+            from { stroke-dashoffset: 283; }
+        }
+        .progress-ring { animation: progress-fill 1s ease-out forwards; }
+        
+        /* Pulse animation for alerts */
+        @keyframes soft-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .pulse-soft { animation: soft-pulse 2s ease-in-out infinite; }
+        
+        /* Activity item slide in */
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .activity-item { animation: slide-in 0.4s ease-out forwards; }
+        .activity-item:nth-child(1) { animation-delay: 0.1s; }
+        .activity-item:nth-child(2) { animation-delay: 0.2s; }
+        .activity-item:nth-child(3) { animation-delay: 0.3s; }
+        .activity-item:nth-child(4) { animation-delay: 0.4s; }
+        .activity-item:nth-child(5) { animation-delay: 0.5s; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex min-h-screen">
+        
+        <!-- Sidebar - Minimal Icon Navigation -->
+        <aside class="w-20 bg-white shadow-sm flex flex-col items-center py-8 fixed h-full z-10">
+            <!-- Logo -->
+            <div class="w-12 h-12 bg-violet-600 rounded-2xl flex items-center justify-center mb-10 shadow-lg shadow-violet-200">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            </div>
+            
+            <!-- Navigation Icons -->
+            <nav class="flex flex-col items-center gap-2 flex-1">
+                <a href="#" class="nav-item w-12 h-12 rounded-2xl flex items-center justify-center bg-violet-50 text-violet-600 transition-all hover:bg-violet-100" title="Dashboard">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                </a>
+                <a href="#" class="nav-item w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" title="Users">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </a>
+                <a href="#" class="nav-item w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" title="Classes">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </a>
+                <a href="#" class="nav-item w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" title="Grades">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </a>
+                <a href="#" class="nav-item w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" title="Attendance">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                </a>
+                <a href="#" class="nav-item w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" title="Notifications">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                </a>
+            </nav>
+            
+            <!-- Settings at bottom -->
+            <div class="mt-auto">
+                <a href="#" class="nav-item w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" title="Settings">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="flex-1 ml-20 p-8">
+            
+            <!-- Header -->
+            <header class="flex items-center justify-between mb-8">
+                <div>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1" id="current-date">December 23, 2025</p>
+                    <h1 class="text-2xl font-semibold text-gray-800">Good Morning, <span id="admin-name" class="text-violet-600">Admin</span> 👋</h1>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <!-- Search -->
+                    <div class="relative">
+                        <input type="text" placeholder="Search..." class="w-64 pl-10 pr-4 py-3 bg-white rounded-2xl border-0 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 transition-all">
+                        <svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    
+                    <!-- Notification Bell -->
+                    <button class="relative w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-gray-500 hover:text-violet-600 transition-all hover:shadow-md">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <span id="notification-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
+                    </button>
+                    
+                    <!-- Profile -->
+                    <div class="flex items-center gap-3 bg-white rounded-2xl shadow-sm px-4 py-2">
+                        <div class="w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center text-white font-semibold">
+                            A
+                        </div>
+                        <div class="text-left">
+                            <p class="text-sm font-medium text-gray-800" id="user-name">Admin User</p>
+                            <p class="text-xs text-gray-400">Administrator</p>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Bento Grid Layout -->
+            <div class="grid grid-cols-12 gap-6 auto-rows-min">
+                
+                <!-- Card 1: Total Students (Large - spans 5 cols) -->
+                <div class="col-span-12 lg:col-span-5 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Students</p>
+                            <h2 class="text-4xl font-bold text-gray-800" id="total-students">0</h2>
+                            <p class="text-sm text-green-500 font-medium mt-1 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                <span id="student-trend">+12% this month</span>
+                            </p>
+                        </div>
+                        <div class="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center">
+                            <svg class="w-7 h-7 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- Sparkline Chart -->
+                    <div class="mt-4 h-16">
+                        <svg class="w-full h-full" viewBox="0 0 300 60" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="sparklineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" />
+                                    <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,45 Q30,35 60,40 T120,30 T180,35 T240,20 T300,25 L300,60 L0,60 Z" fill="url(#sparklineGradient)" />
+                            <path class="sparkline" d="M0,45 Q30,35 60,40 T120,30 T180,35 T240,20 T300,25" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Card 2: Attendance Today (Medium - spans 4 cols) -->
+                <div class="col-span-12 sm:col-span-6 lg:col-span-4 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Attendance Today</p>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-4xl font-bold text-gray-800"><span id="attendance-percent">0</span>%</h2>
+                            <p class="text-sm text-gray-500 mt-1"><span id="present-count">0</span> of <span id="total-for-attendance">0</span> present</p>
+                        </div>
+                        <!-- Circular Progress Ring -->
+                        <div class="relative w-24 h-24">
+                            <svg class="w-24 h-24 transform -rotate-90">
+                                <circle cx="48" cy="48" r="40" stroke="#f3f4f6" stroke-width="8" fill="none" />
+                                <circle id="attendance-ring" class="progress-ring" cx="48" cy="48" r="40" stroke="#8b5cf6" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" />
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <svg class="w-8 h-8 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 3: Average GPA (Medium - spans 3 cols) -->
+                <div class="col-span-12 sm:col-span-6 lg:col-span-3 bg-gradient-to-br from-violet-500 to-violet-600 rounded-3xl shadow-sm shadow-violet-200 p-6 card-hover text-white">
+                    <p class="text-xs font-bold text-violet-200 uppercase tracking-wider mb-2">Average GPA</p>
+                    <h2 class="text-4xl font-bold mb-1" id="average-gpa">0.00</h2>
+                    <p class="text-sm text-violet-200">Across all students</p>
+                    <div class="mt-4 flex items-center gap-2">
+                        <div class="flex-1 h-2 bg-violet-400 rounded-full overflow-hidden">
+                            <div id="gpa-bar" class="h-full bg-white rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                        <span class="text-xs font-semibold" id="gpa-percent">0%</span>
+                    </div>
+                </div>
+                
+                <!-- Card 4: Recent Activities (Tall - spans 4 cols, 2 rows) -->
+                <div class="col-span-12 lg:col-span-4 row-span-2 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Recent Activities</p>
+                        <button class="text-xs text-violet-600 font-medium hover:underline">View All</button>
+                    </div>
+                    <div class="space-y-4" id="activities-list">
+                        <!-- Activities will be loaded here -->
+                        <div class="flex items-center gap-3 text-gray-400">
+                            <div class="w-8 h-8 bg-gray-100 rounded-xl animate-pulse"></div>
+                            <div class="flex-1">
+                                <div class="h-4 bg-gray-100 rounded animate-pulse w-3/4 mb-1"></div>
+                                <div class="h-3 bg-gray-100 rounded animate-pulse w-1/2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 5: Quick Actions (Wide - spans 5 cols) -->
+                <div class="col-span-12 lg:col-span-5 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Quick Actions</p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="showModal('addStudent')" class="px-5 py-3 bg-violet-600 text-white rounded-2xl font-medium text-sm hover:bg-violet-700 transition-all flex items-center gap-2 shadow-sm shadow-violet-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            Add Student
+                        </button>
+                        <button onclick="showModal('announcement')" class="px-5 py-3 bg-gray-100 text-gray-700 rounded-2xl font-medium text-sm hover:bg-gray-200 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                            </svg>
+                            Post Announcement
+                        </button>
+                        <button onclick="showModal('attendance')" class="px-5 py-3 bg-gray-100 text-gray-700 rounded-2xl font-medium text-sm hover:bg-gray-200 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                            Mark Attendance
+                        </button>
+                        <button class="px-5 py-3 bg-gray-100 text-gray-700 rounded-2xl font-medium text-sm hover:bg-gray-200 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Generate Report
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Card 6: Teachers Count (Small - spans 3 cols) -->
+                <div class="col-span-6 lg:col-span-3 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Teachers</p>
+                            <h2 class="text-3xl font-bold text-gray-800" id="total-teachers">0</h2>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 7: Classes Count -->
+                <div class="col-span-6 lg:col-span-2 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Classes</p>
+                            <h2 class="text-3xl font-bold text-gray-800" id="total-classes">0</h2>
+                        </div>
+                        <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 8: Grade Distribution (Wide - spans 6 cols) -->
+                <div class="col-span-12 lg:col-span-6 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Grade Distribution</p>
+                    <div class="flex items-end justify-between gap-3 h-32" id="grade-distribution">
+                        <!-- Bars will be loaded here -->
+                    </div>
+                    <div class="flex justify-between mt-3 text-xs font-medium text-gray-400">
+                        <span>A</span>
+                        <span>B</span>
+                        <span>C</span>
+                        <span>D</span>
+                        <span>F</span>
+                    </div>
+                </div>
+                
+                <!-- Card 9: Notifications Panel -->
+                <div class="col-span-12 lg:col-span-6 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Recent Notifications</p>
+                        <span id="unread-count" class="px-2 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-lg">0 new</span>
+                    </div>
+                    <div class="space-y-3 max-h-48 overflow-y-auto" id="notifications-list">
+                        <!-- Notifications will be loaded here -->
+                    </div>
+                </div>
+                
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300">
+        <div id="modal-content" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-xl w-full max-w-md p-6 transform scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between mb-6">
+                <h3 id="modal-title" class="text-lg font-semibold text-gray-800">Modal Title</h3>
+                <button onclick="hideModal()" class="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="modal-body">
+                <!-- Modal content will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // API Base URL
+        const API_BASE = 'http://localhost:3000/api';
+        
+        // Initialize Dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDateTime();
+            loadDashboardData();
+            setInterval(updateDateTime, 60000); // Update time every minute
+        });
+        
+        function updateDateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
+            
+            const hour = now.getHours();
+            let greeting = 'Good Morning';
+            if (hour >= 12 && hour < 17) greeting = 'Good Afternoon';
+            else if (hour >= 17) greeting = 'Good Evening';
+            
+            document.querySelector('h1').innerHTML = `${greeting}, <span class="text-violet-600" id="admin-name">Admin</span> 👋`;
+        }
+        
+        async function loadDashboardData() {
+            try {
+                // Load analytics data
+                const [statsRes, attendanceRes, gradeDistRes, classesRes] = await Promise.all([
+                    fetch(`${API_BASE}/analytics/user-counts`),
+                    fetch(`${API_BASE}/analytics/attendance/today`),
+                    fetch(`${API_BASE}/analytics/grades/distribution`),
+                    fetch(`${API_BASE}/classes`)
+                ]);
+                
+                const stats = await statsRes.json();
+                const attendance = await attendanceRes.json();
+                const gradeDist = await gradeDistRes.json();
+                const classes = await classesRes.json();
+                
+                // Update user counts
+                document.getElementById('total-students').textContent = stats.students || 0;
+                document.getElementById('total-teachers').textContent = stats.teachers || 0;
+                document.getElementById('total-classes').textContent = classes.length || 0;
+                
+                // Update attendance
+                const attendancePercent = attendance.rate || 0;
+                document.getElementById('attendance-percent').textContent = Math.round(attendancePercent);
+                document.getElementById('present-count').textContent = attendance.present || 0;
+                document.getElementById('total-for-attendance').textContent = attendance.total || 0;
+                
+                // Animate attendance ring
+                const ring = document.getElementById('attendance-ring');
+                const circumference = 2 * Math.PI * 40;
+                const offset = circumference - (attendancePercent / 100) * circumference;
+                setTimeout(() => {
+                    ring.style.strokeDashoffset = offset;
+                }, 100);
+                
+                // Update grade distribution
+                renderGradeDistribution(gradeDist);
+                
+                // Load GPA
+                loadAverageGPA();
+                
+                // Load activities (from notifications)
+                loadActivities();
+                
+                // Load notifications
+                loadNotifications();
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+        
+        async function loadAverageGPA() {
+            try {
+                // Calculate average GPA from all students
+                const res = await fetch(`${API_BASE}/users`);
+                const users = await res.json();
+                const students = users.filter(u => u.role === 'student');
+                
+                let totalGPA = 0;
+                let count = 0;
+                
+                for (const student of students) {
+                    try {
+                        const gpaRes = await fetch(`${API_BASE}/grades/student/${student.id}/gpa`);
+                        const gpaData = await gpaRes.json();
+                        if (gpaData.gpa) {
+                            totalGPA += parseFloat(gpaData.gpa);
+                            count++;
+                        }
+                    } catch (e) {}
+                }
+                
+                const avgGPA = count > 0 ? (totalGPA / count).toFixed(2) : '0.00';
+                document.getElementById('average-gpa').textContent = avgGPA;
+                
+                // Update GPA bar (out of 4.0)
+                const gpaPercent = Math.min((avgGPA / 4.0) * 100, 100);
+                document.getElementById('gpa-bar').style.width = `${gpaPercent}%`;
+                document.getElementById('gpa-percent').textContent = `${Math.round(gpaPercent)}%`;
+                
+            } catch (error) {
+                console.error('Error loading GPA:', error);
+            }
+        }
+        
+        function renderGradeDistribution(data) {
+            const container = document.getElementById('grade-distribution');
+            const grades = ['A', 'B', 'C', 'D', 'F'];
+            const colors = ['bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-orange-500', 'bg-red-500'];
+            
+            // Find max for scaling
+            const values = grades.map(g => {
+                const item = data.find(d => d.grade === g);
+                return item ? item.count : 0;
+            });
+            const max = Math.max(...values, 1);
+            
+            container.innerHTML = grades.map((grade, i) => {
+                const count = values[i];
+                const height = Math.max((count / max) * 100, 5);
+                return `
+                    <div class="flex-1 flex flex-col items-center">
+                        <span class="text-xs font-semibold text-gray-600 mb-1">${count}</span>
+                        <div class="w-full ${colors[i]} rounded-xl transition-all duration-700" style="height: ${height}%"></div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function loadActivities() {
+            try {
+                // Get recent notifications as activities
+                const res = await fetch(`${API_BASE}/notifications/user/1`);
+                const notifications = await res.json();
+                
+                const container = document.getElementById('activities-list');
+                
+                if (notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-400 py-8">
+                            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                            <p class="text-sm">No recent activities</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const icons = {
+                    attendance: { icon: '📋', bg: 'bg-blue-100' },
+                    grade: { icon: '📊', bg: 'bg-emerald-100' },
+                    announcement: { icon: '📢', bg: 'bg-violet-100' },
+                    system: { icon: '⚙️', bg: 'bg-gray-100' },
+                    reminder: { icon: '⏰', bg: 'bg-amber-100' }
+                };
+                
+                container.innerHTML = notifications.slice(0, 5).map((n, i) => {
+                    const type = n.type || 'system';
+                    const iconData = icons[type] || icons.system;
+                    const timeAgo = getTimeAgo(n.createdAt);
+                    
+                    return `
+                        <div class="activity-item opacity-0 flex items-start gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-all cursor-pointer">
+                            <div class="w-10 h-10 ${iconData.bg} rounded-xl flex items-center justify-center flex-shrink-0">
+                                <span class="text-lg">${iconData.icon}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-800 truncate">${n.title || n.message}</p>
+                                <p class="text-xs text-gray-400 mt-0.5">${timeAgo}</p>
+                            </div>
+                            ${!n.isRead ? '<div class="w-2 h-2 bg-violet-500 rounded-full flex-shrink-0 mt-2"></div>' : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading activities:', error);
+            }
+        }
+        
+        async function loadNotifications() {
+            try {
+                const [notifRes, unreadRes] = await Promise.all([
+                    fetch(`${API_BASE}/notifications/user/1`),
+                    fetch(`${API_BASE}/notifications/user/1/unread`)
+                ]);
+                
+                const notifications = await notifRes.json();
+                const unreadData = await unreadRes.json();
+                
+                // Update unread badge
+                const unreadCount = unreadData.unreadCount || 0;
+                document.getElementById('unread-count').textContent = `${unreadCount} new`;
+                
+                const badge = document.getElementById('notification-badge');
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount;
+                    badge.classList.remove('hidden');
+                }
+                
+                const container = document.getElementById('notifications-list');
+                
+                if (notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-400 py-4">
+                            <p class="text-sm">No notifications</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = notifications.slice(0, 4).map(n => {
+                    const isUnread = !n.isRead;
+                    return `
+                        <div class="flex items-start gap-3 p-3 rounded-2xl ${isUnread ? 'bg-violet-50' : 'hover:bg-gray-50'} transition-all cursor-pointer">
+                            <div class="w-2 h-2 ${isUnread ? 'bg-violet-500' : 'bg-gray-300'} rounded-full mt-2 flex-shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm ${isUnread ? 'font-medium text-gray-800' : 'text-gray-600'} truncate">${n.title || n.message}</p>
+                                <p class="text-xs text-gray-400 mt-0.5">${n.message}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+        
+        function getTimeAgo(dateString) {
+            if (!dateString) return 'Just now';
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+            return date.toLocaleDateString();
+        }
+        
+        // Modal Functions
+        function showModal(type) {
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+            
+            const modals = {
+                addStudent: {
+                    title: 'Add New Student',
+                    body: `
+                        <form onsubmit="handleAddStudent(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Full Name</label>
+                                <input type="text" name="name" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="Enter student name">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Email</label>
+                                <input type="email" name="email" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="student@school.com">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Password</label>
+                                <input type="password" name="password" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="••••••••">
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Add Student
+                            </button>
+                        </form>
+                    `
+                },
+                announcement: {
+                    title: 'Post Announcement',
+                    body: `
+                        <form onsubmit="handleAnnouncement(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Title</label>
+                                <input type="text" name="title" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="Announcement title">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Message</label>
+                                <textarea name="message" required rows="4" class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 resize-none" placeholder="Write your announcement..."></textarea>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Send Announcement
+                            </button>
+                        </form>
+                    `
+                },
+                attendance: {
+                    title: 'Mark Attendance',
+                    body: `
+                        <form onsubmit="handleAttendance(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Student ID</label>
+                                <input type="number" name="studentId" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="Enter student ID">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Status</label>
+                                <select name="status" class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                    <option value="present">Present</option>
+                                    <option value="absent">Absent</option>
+                                    <option value="late">Late</option>
+                                    <option value="excused">Excused</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Mark Attendance
+                            </button>
+                        </form>
+                    `
+                }
+            };
+            
+            const modal = modals[type];
+            if (!modal) return;
+            
+            title.textContent = modal.title;
+            body.innerHTML = modal.body;
+            
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+        
+        function hideModal() {
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            
+            overlay.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300);
+        }
+        
+        // Form Handlers
+        async function handleAddStudent(e) {
+            e.preventDefault();
+            const form = e.target;
+            const data = {
+                name: form.name.value,
+                email: form.email.value,
+                password: form.password.value,
+                role: 'student'
+            };
+            
+            try {
+                const res = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    loadDashboardData();
+                    showToast('Student added successfully!', 'success');
+                } else {
+                    showToast('Failed to add student', 'error');
+                }
+            } catch (error) {
+                showToast('Error adding student', 'error');
+            }
+        }
+        
+        async function handleAnnouncement(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            try {
+                // Get all users
+                const usersRes = await fetch(`${API_BASE}/users`);
+                const users = await usersRes.json();
+                const userIds = users.map(u => u.id);
+                
+                const res = await fetch(`${API_BASE}/notifications/announcement`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: form.title.value,
+                        message: form.message.value,
+                        userIds: userIds
+                    })
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    loadNotifications();
+                    loadActivities();
+                    showToast('Announcement sent!', 'success');
+                } else {
+                    showToast('Failed to send announcement', 'error');
+                }
+            } catch (error) {
+                showToast('Error sending announcement', 'error');
+            }
+        }
+        
+        async function handleAttendance(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            try {
+                const res = await fetch(`${API_BASE}/attendance/mark`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        studentId: parseInt(form.studentId.value),
+                        status: form.status.value,
+                        markedBy: 1 // Admin
+                    })
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    loadDashboardData();
+                    showToast('Attendance marked!', 'success');
+                } else {
+                    showToast('Failed to mark attendance', 'error');
+                }
+            } catch (error) {
+                showToast('Error marking attendance', 'error');
+            }
+        }
+        
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-6 right-6 px-6 py-4 rounded-2xl shadow-lg text-white font-medium transform translate-y-4 opacity-0 transition-all duration-300 z-50 ${
+                type === 'success' ? 'bg-emerald-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-violet-600'
+            }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Close modal on overlay click
+        document.getElementById('modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-overlay') {
+                hideModal();
+            }
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideModal();
+            }
+        });
+    </script>
+</body>
+</html>

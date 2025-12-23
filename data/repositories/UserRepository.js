@@ -70,6 +70,85 @@ class UserRepository {
             });
         });
     }
+
+    // Get parent's linked student(s)
+    getLinkedStudents(parentId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT id, name, email, role 
+                FROM users 
+                WHERE parentId = ? AND role = 'STUDENT'
+            `;
+            db.all(sql, [parentId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+    }
+
+    // Get student's parent
+    getParentByStudent(studentId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT p.id, p.name, p.email, p.role 
+                FROM users s
+                JOIN users p ON s.parentId = p.id
+                WHERE s.id = ? AND s.role = 'STUDENT' AND p.role = 'PARENT'
+            `;
+            db.get(sql, [studentId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+    }
+
+    // Link parent to student (update student's parentId)
+    linkParentToStudent(parentId, studentId) {
+        return new Promise((resolve, reject) => {
+            const sql = 'UPDATE users SET parentId = ? WHERE id = ? AND role = ?';
+            db.run(sql, [parentId, studentId, 'STUDENT'], function(err) {
+                if (err) reject(err);
+                else resolve({ updated: this.changes, parentId, studentId });
+            });
+        });
+    }
+
+    // Unlink parent from student
+    unlinkParentFromStudent(studentId) {
+        return new Promise((resolve, reject) => {
+            const sql = 'UPDATE users SET parentId = NULL WHERE id = ? AND role = ?';
+            db.run(sql, [studentId, 'STUDENT'], function(err) {
+                if (err) reject(err);
+                else resolve({ updated: this.changes });
+            });
+        });
+    }
+
+    // Check if parent is linked to a specific student
+    isParentLinkedToStudent(parentId, studentId) {
+        return new Promise((resolve, reject) => {
+            const sql = 'SELECT id FROM users WHERE id = ? AND parentId = ? AND role = ?';
+            db.get(sql, [studentId, parentId, 'STUDENT'], (err, row) => {
+                if (err) reject(err);
+                else resolve(!!row);
+            });
+        });
+    }
+
+    // Get students without a parent
+    getUnlinkedStudents() {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT id, name, email 
+                FROM users 
+                WHERE role = 'STUDENT' AND (parentId IS NULL OR parentId = '')
+            `;
+            db.all(sql, [], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+    }
 }
 
 module.exports = new UserRepository();
