@@ -3,156 +3,2782 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - SMS</title>
-    <link rel="stylesheet" href="style.css">
+    <title>School Dashboard | Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        
+        /* Smooth transitions */
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(0,0,0,0.1); }
+        
+        /* Sparkline animation */
+        @keyframes sparkline-draw {
+            from { stroke-dashoffset: 200; }
+            to { stroke-dashoffset: 0; }
+        }
+        .sparkline { stroke-dasharray: 200; animation: sparkline-draw 1.5s ease-out forwards; }
+        
+        /* Progress ring animation */
+        @keyframes progress-fill {
+            from { stroke-dashoffset: 283; }
+        }
+        .progress-ring { animation: progress-fill 1s ease-out forwards; }
+        
+        /* Pulse animation for alerts */
+        @keyframes soft-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .pulse-soft { animation: soft-pulse 2s ease-in-out infinite; }
+        
+        /* Activity item slide in */
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .activity-item { animation: slide-in 0.4s ease-out forwards; }
+        .activity-item:nth-child(1) { animation-delay: 0.1s; }
+        .activity-item:nth-child(2) { animation-delay: 0.2s; }
+        .activity-item:nth-child(3) { animation-delay: 0.3s; }
+        .activity-item:nth-child(4) { animation-delay: 0.4s; }
+        .activity-item:nth-child(5) { animation-delay: 0.5s; }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Performance Dashboard</h1>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="welcomeMsg"></span>
-                <button onclick="logout()" style="background: #e74c3c; width: auto;">Logout</button>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex min-h-screen">
+        
+        <!-- Sidebar - Minimal Icon Navigation -->
+        <aside class="w-20 bg-white shadow-sm flex flex-col items-center py-8 fixed h-full z-10">
+            <!-- Logo -->
+            <div class="w-12 h-12 bg-violet-600 rounded-2xl flex items-center justify-center mb-10 shadow-lg shadow-violet-200">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
             </div>
-        </header>
-
-        <main>
-            <div class="row">
-                <!-- Profile & Notifications -->
-                <div class="col">
-                    <div class="card">
-                        <h3>Student Profile</h3>
-                        <div id="profileInfo">Loading...</div>
+            
+            <!-- Navigation Icons -->
+            <nav class="flex flex-col items-center gap-2 flex-1" id="main-nav">
+                <a href="#" onclick="showView('dashboard')" class="nav-item admin-only teacher-only w-12 h-12 rounded-2xl flex items-center justify-center bg-violet-50 text-violet-600 transition-all hover:bg-violet-100" id="nav-dashboard" title="Dashboard">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                </a>
+                <a href="#" onclick="showView('parent')" class="nav-item parent-only w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" id="nav-parent" title="My Children">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </a>
+                <a href="#" onclick="showView('users')" class="nav-item admin-only w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" id="nav-users" title="Users">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </a>
+                <a href="#" onclick="showView('classes')" class="nav-item admin-only teacher-only w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" id="nav-classes" title="Classes">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </a>
+                <a href="#" onclick="showView('grades')" class="nav-item admin-only teacher-only w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" id="nav-grades" title="Grades">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </a>
+                <a href="#" onclick="showView('attendance')" class="nav-item admin-only teacher-only w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" id="nav-attendance" title="Attendance">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                </a>
+                <a href="#" onclick="showModal('notifications')" class="nav-item w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" id="nav-notifications" title="Notifications">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                </a>
+            </nav>
+            
+            <!-- Settings at bottom -->
+            <div class="mt-auto">
+                <a href="#" class="nav-item w-12 h-12 rounded-2xl flex items-center justify-center text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600" title="Settings">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </a>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="flex-1 ml-20 p-8">
+            
+            <!-- Header -->
+            <header class="flex items-center justify-between mb-8">
+                <div>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1" id="current-date">December 23, 2025</p>
+                    <h1 class="text-2xl font-semibold text-gray-800">Good Morning, <span id="admin-name" class="text-violet-600">Admin</span> 👋</h1>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <!-- Search -->
+                    <div class="relative">
+                        <input type="text" placeholder="Search..." class="w-64 pl-10 pr-4 py-3 bg-white rounded-2xl border-0 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 transition-all">
+                        <svg class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
                     </div>
                     
-                    <div class="card" style="background-color: #fff8e1; border-left: 5px solid #f1c40f;">
-                        <h3>Notification Feed</h3>
-                        <ul id="notificationList" class="list-group" style="max-height: 200px;">
-                            <li>Loading alerts...</li>
-                        </ul>
+                    <!-- Notification Bell -->
+                    <div class="relative group">
+                        <button class="relative w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-gray-500 hover:text-violet-600 transition-all hover:shadow-md">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span id="notification-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center hidden">0</span>
+                        </button>
+                        <!-- Notification Dropdown -->
+                        <div class="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl py-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <div class="flex items-center justify-between px-4 pb-3 border-b border-gray-100">
+                                <h4 class="font-semibold text-gray-800">Notifications</h4>
+                                <button onclick="markAllNotificationsRead()" class="text-xs text-violet-600 hover:text-violet-700 font-medium">Mark all read</button>
+                            </div>
+                            <div id="notification-dropdown-list" class="max-h-64 overflow-y-auto py-2">
+                                <div class="px-4 py-6 text-center text-gray-400 text-sm">Loading...</div>
+                            </div>
+                            <div class="px-4 pt-3 border-t border-gray-100">
+                                <button onclick="showModal('notifications')" class="w-full py-2 text-sm text-violet-600 hover:text-violet-700 font-medium">View all notifications</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Profile -->
+                    <div class="relative group">
+                        <div class="flex items-center gap-3 bg-white rounded-2xl shadow-sm px-4 py-2 cursor-pointer hover:shadow-md transition-all">
+                            <div class="w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center text-white font-semibold" id="user-avatar">
+                                A
+                            </div>
+                            <div class="text-left">
+                                <p class="text-sm font-medium text-gray-800" id="user-name">Admin User</p>
+                                <p class="text-xs text-gray-400" id="user-role-display">Administrator</p>
+                            </div>
+                            <svg class="w-4 h-4 text-gray-400 ml-2 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                        <!-- Dropdown Menu -->
+                        <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <a href="#" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-all">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                My Profile
+                            </a>
+                            <a href="#" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-all">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Settings
+                            </a>
+                            <div class="border-t border-gray-100 my-1"></div>
+                            <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Grades -->
-                <div class="col">
-                    <div class="card">
-                        <h3>Grade Report Card</h3>
-                        <ul id="gradeList" class="list-group">
-                            <li>Loading grades...</li>
-                        </ul>
+            </header>
+            
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="view-content">
+            <!-- Bento Grid Layout -->
+            <div class="grid grid-cols-12 gap-6 auto-rows-min">
+                
+                <!-- Card 1: Total Students (Large - spans 5 cols) -->
+                <div class="col-span-12 lg:col-span-5 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Students</p>
+                            <h2 class="text-4xl font-bold text-gray-800" id="total-students">0</h2>
+                            <p class="text-sm text-green-500 font-medium mt-1 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                <span id="student-trend">+12% this month</span>
+                            </p>
+                        </div>
+                        <div class="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center">
+                            <svg class="w-7 h-7 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- Sparkline Chart -->
+                    <div class="mt-4 h-16">
+                        <svg class="w-full h-full" viewBox="0 0 300 60" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="sparklineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" />
+                                    <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,45 Q30,35 60,40 T120,30 T180,35 T240,20 T300,25 L300,60 L0,60 Z" fill="url(#sparklineGradient)" />
+                            <path class="sparkline" d="M0,45 Q30,35 60,40 T120,30 T180,35 T240,20 T300,25" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Card 2: Attendance Today (Medium - spans 4 cols) -->
+                <div class="col-span-12 sm:col-span-6 lg:col-span-4 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Attendance Today</p>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-4xl font-bold text-gray-800"><span id="attendance-percent">0</span>%</h2>
+                            <p class="text-sm text-gray-500 mt-1"><span id="present-count">0</span> of <span id="total-for-attendance">0</span> present</p>
+                        </div>
+                        <!-- Circular Progress Ring -->
+                        <div class="relative w-24 h-24">
+                            <svg class="w-24 h-24 transform -rotate-90">
+                                <circle cx="48" cy="48" r="40" stroke="#f3f4f6" stroke-width="8" fill="none" />
+                                <circle id="attendance-ring" class="progress-ring" cx="48" cy="48" r="40" stroke="#8b5cf6" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" />
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <svg class="w-8 h-8 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 3: Average GPA (Medium - spans 3 cols) -->
+                <div class="col-span-12 sm:col-span-6 lg:col-span-3 bg-gradient-to-br from-violet-500 to-violet-600 rounded-3xl shadow-sm shadow-violet-200 p-6 card-hover text-white">
+                    <p class="text-xs font-bold text-violet-200 uppercase tracking-wider mb-2">Average GPA</p>
+                    <h2 class="text-4xl font-bold mb-1" id="average-gpa">0.00</h2>
+                    <p class="text-sm text-violet-200">Across all students</p>
+                    <div class="mt-4 flex items-center gap-2">
+                        <div class="flex-1 h-2 bg-violet-400 rounded-full overflow-hidden">
+                            <div id="gpa-bar" class="h-full bg-white rounded-full transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                        <span class="text-xs font-semibold" id="gpa-percent">0%</span>
+                    </div>
+                </div>
+                
+                <!-- Card 4: Recent Activities (Tall - spans 4 cols, 2 rows) -->
+                <div class="col-span-12 lg:col-span-4 row-span-2 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Recent Activities</p>
+                        <button class="text-xs text-violet-600 font-medium hover:underline">View All</button>
+                    </div>
+                    <div class="space-y-4" id="activities-list">
+                        <!-- Activities will be loaded here -->
+                        <div class="flex items-center gap-3 text-gray-400">
+                            <div class="w-8 h-8 bg-gray-100 rounded-xl animate-pulse"></div>
+                            <div class="flex-1">
+                                <div class="h-4 bg-gray-100 rounded animate-pulse w-3/4 mb-1"></div>
+                                <div class="h-3 bg-gray-100 rounded animate-pulse w-1/2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 5: Quick Actions (Wide - spans 5 cols) -->
+                <div class="col-span-12 lg:col-span-5 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Quick Actions</p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="showModal('addStudent')" class="px-5 py-3 bg-violet-600 text-white rounded-2xl font-medium text-sm hover:bg-violet-700 transition-all flex items-center gap-2 shadow-sm shadow-violet-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            Add Student
+                        </button>
+                        <button onclick="showModal('announcement')" class="px-5 py-3 bg-gray-100 text-gray-700 rounded-2xl font-medium text-sm hover:bg-gray-200 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                            </svg>
+                            Post Announcement
+                        </button>
+                        <button onclick="showModal('attendance')" class="px-5 py-3 bg-gray-100 text-gray-700 rounded-2xl font-medium text-sm hover:bg-gray-200 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                            Mark Attendance
+                        </button>
+                        <button class="px-5 py-3 bg-gray-100 text-gray-700 rounded-2xl font-medium text-sm hover:bg-gray-200 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Generate Report
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Card 6: Teachers Count (Small - spans 3 cols) -->
+                <div class="col-span-6 lg:col-span-3 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Teachers</p>
+                            <h2 class="text-3xl font-bold text-gray-800" id="total-teachers">0</h2>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 7: Classes Count -->
+                <div class="col-span-6 lg:col-span-2 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Classes</p>
+                            <h2 class="text-3xl font-bold text-gray-800" id="total-classes">0</h2>
+                        </div>
+                        <div class="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 8: Grade Distribution (Wide - spans 6 cols) -->
+                <div class="col-span-12 lg:col-span-6 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Grade Distribution</p>
+                    <div class="flex items-end justify-between gap-3 h-32" id="grade-distribution">
+                        <!-- Bars will be loaded here -->
+                    </div>
+                    <div class="flex justify-between mt-3 text-xs font-medium text-gray-400">
+                        <span>A</span>
+                        <span>B</span>
+                        <span>C</span>
+                        <span>D</span>
+                        <span>F</span>
+                    </div>
+                </div>
+                
+                <!-- Card 9: Notifications Panel -->
+                <div class="col-span-12 lg:col-span-6 bg-white rounded-3xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Recent Notifications</p>
+                        <span id="unread-count" class="px-2 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-lg">0 new</span>
+                    </div>
+                    <div class="space-y-3 max-h-48 overflow-y-auto" id="notifications-list">
+                        <!-- Notifications will be loaded here -->
+                    </div>
+                </div>
+                
+            </div>
+            </div><!-- End Dashboard View -->
+            
+            <!-- Attendance View -->
+            <div id="view-attendance" class="view-content hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Attendance Management</h2>
+                        <p class="text-gray-500 text-sm mt-1">Mark and view student attendance</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <input type="date" id="attendance-date" class="px-4 py-3 bg-white rounded-2xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" />
+                        <button onclick="loadAttendanceForDate()" class="px-5 py-3 bg-gray-100 text-gray-700 rounded-2xl font-medium text-sm hover:bg-gray-200 transition-all">
+                            Load Date
+                        </button>
+                        <button onclick="submitBulkAttendance()" class="px-5 py-3 bg-violet-600 text-white rounded-2xl font-medium text-sm hover:bg-violet-700 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Save Attendance
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Attendance Stats -->
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-2xl p-4 shadow-sm">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Students</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1" id="att-total">0</p>
+                    </div>
+                    <div class="bg-emerald-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Present</p>
+                        <p class="text-2xl font-bold text-emerald-700 mt-1" id="att-present">0</p>
+                    </div>
+                    <div class="bg-red-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-red-600 uppercase tracking-wider">Absent</p>
+                        <p class="text-2xl font-bold text-red-700 mt-1" id="att-absent">0</p>
+                    </div>
+                    <div class="bg-amber-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-amber-600 uppercase tracking-wider">Late</p>
+                        <p class="text-2xl font-bold text-amber-700 mt-1" id="att-late">0</p>
+                    </div>
+                </div>
+                
+                <!-- Student List for Attendance -->
+                <div class="bg-white rounded-3xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Student Attendance</p>
+                        <div class="flex gap-2">
+                            <button onclick="markAllAs('PRESENT')" class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-medium hover:bg-emerald-200">All Present</button>
+                            <button onclick="markAllAs('ABSENT')" class="px-3 py-1.5 bg-red-100 text-red-700 rounded-xl text-xs font-medium hover:bg-red-200">All Absent</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                    <th class="pb-4">Student</th>
+                                    <th class="pb-4">Email</th>
+                                    <th class="pb-4 text-center">Present</th>
+                                    <th class="pb-4 text-center">Absent</th>
+                                    <th class="pb-4 text-center">Late</th>
+                                    <th class="pb-4 text-center">Excused</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table-body">
+                                <tr><td colspan="6" class="py-8 text-center text-gray-400">Loading students...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div><!-- End Attendance View -->
+            
+            <!-- Users View (placeholder) -->
+            <div id="view-users" class="view-content hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Users Management</h2>
+                        <p class="text-gray-500 text-sm mt-1">Manage users and parent-student links</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="showModal('linkParent')" class="px-5 py-3 bg-violet-600 text-white rounded-2xl font-medium text-sm hover:bg-violet-700 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            Link Parent to Student
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-3xl shadow-sm p-8 text-center">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Full Users Management</h3>
+                    <p class="text-gray-500 mb-4">Full user management coming soon. Use the button above to link parents to students.</p>
+                    <p class="text-sm text-gray-400">You can add new students using the "Add Student" quick action on the dashboard.</p>
+                </div>
+            </div>
+            
+            <!-- Classes View -->
+            <div id="view-classes" class="view-content hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Classes Management</h2>
+                        <p class="text-gray-500 text-sm mt-1">Manage classes, subjects, and enrollments</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="showModal('createSubject')" class="px-5 py-3 bg-gray-100 text-gray-700 rounded-2xl font-medium text-sm hover:bg-gray-200 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            New Subject
+                        </button>
+                        <button onclick="showModal('createClass')" class="px-5 py-3 bg-violet-600 text-white rounded-2xl font-medium text-sm hover:bg-violet-700 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            New Class
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Classes Stats -->
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-2xl p-4 shadow-sm">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Classes</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1" id="classes-total">0</p>
+                    </div>
+                    <div class="bg-violet-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-violet-600 uppercase tracking-wider">Total Subjects</p>
+                        <p class="text-2xl font-bold text-violet-700 mt-1" id="subjects-total">0</p>
+                    </div>
+                    <div class="bg-blue-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-blue-600 uppercase tracking-wider">Teachers</p>
+                        <p class="text-2xl font-bold text-blue-700 mt-1" id="teachers-count">0</p>
+                    </div>
+                    <div class="bg-emerald-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Students Enrolled</p>
+                        <p class="text-2xl font-bold text-emerald-700 mt-1" id="enrolled-count">0</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-6">
+                    <!-- Classes List -->
+                    <div class="col-span-2 bg-white rounded-3xl shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">All Classes</p>
+                        </div>
+                        <div id="classes-list" class="space-y-3 max-h-96 overflow-y-auto">
+                            <div class="text-center text-gray-400 py-8">Loading classes...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Subjects List -->
+                    <div class="bg-white rounded-3xl shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">All Subjects</p>
+                        </div>
+                        <div id="subjects-list" class="space-y-2 max-h-96 overflow-y-auto">
+                            <div class="text-center text-gray-400 py-8">Loading subjects...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Class Details Panel (shown when a class is selected) -->
+                <div id="class-details-panel" class="hidden mt-6 bg-white rounded-3xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 id="class-detail-name" class="text-lg font-bold text-gray-800">Class Details</h3>
+                            <p id="class-detail-grade" class="text-sm text-gray-500">Grade Level</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="showModal('enrollStudent')" class="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl font-medium text-sm hover:bg-emerald-200 transition-all">
+                                + Enroll Student
+                            </button>
+                            <button onclick="showModal('assignSubject')" class="px-4 py-2 bg-violet-100 text-violet-700 rounded-xl font-medium text-sm hover:bg-violet-200 transition-all">
+                                + Assign Subject
+                            </button>
+                            <button onclick="hideClassDetails()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl font-medium text-sm hover:bg-gray-200 transition-all">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-6">
+                        <!-- Students in Class -->
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Enrolled Students</p>
+                            <div id="class-students-list" class="space-y-2 max-h-48 overflow-y-auto">
+                                <div class="text-center text-gray-400 py-4 text-sm">No students enrolled</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Subjects in Class -->
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Assigned Subjects</p>
+                            <div id="class-subjects-list" class="space-y-2 max-h-48 overflow-y-auto">
+                                <div class="text-center text-gray-400 py-4 text-sm">No subjects assigned</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+            
+            <!-- Grades View -->
+            <div id="view-grades" class="view-content hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Grades Management</h2>
+                        <p class="text-gray-500 text-sm mt-1">View and manage student grades</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="showModal('addGrade')" class="px-5 py-3 bg-violet-600 text-white rounded-2xl font-medium text-sm hover:bg-violet-700 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Grade
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Student Selector -->
+                <div class="bg-white rounded-2xl shadow-sm p-4 mb-6">
+                    <div class="flex items-center gap-4">
+                        <div class="flex-1">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Select Student</label>
+                            <select id="grade-student-select" onchange="loadStudentGrades()" class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                <option value="">-- Select a student --</option>
+                            </select>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Current GPA</p>
+                            <p id="student-gpa" class="text-3xl font-bold text-violet-600">--</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Grade Stats -->
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-2xl p-4 shadow-sm">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Grades</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1" id="grade-total">0</p>
+                    </div>
+                    <div class="bg-emerald-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Average Score</p>
+                        <p class="text-2xl font-bold text-emerald-700 mt-1" id="grade-average">--</p>
+                    </div>
+                    <div class="bg-violet-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-violet-600 uppercase tracking-wider">Highest</p>
+                        <p class="text-2xl font-bold text-violet-700 mt-1" id="grade-highest">--</p>
+                    </div>
+                    <div class="bg-amber-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-amber-600 uppercase tracking-wider">Lowest</p>
+                        <p class="text-2xl font-bold text-amber-700 mt-1" id="grade-lowest">--</p>
+                    </div>
+                </div>
+                
+                <!-- Grades by Subject -->
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <!-- Grades Table -->
+                    <div class="bg-white rounded-3xl shadow-sm p-6">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">All Grades</p>
+                        <div class="overflow-y-auto max-h-96">
+                            <table class="w-full">
+                                <thead class="sticky top-0 bg-white">
+                                    <tr class="text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                        <th class="pb-4">Subject</th>
+                                        <th class="pb-4 text-center">Score</th>
+                                        <th class="pb-4 text-center">Grade</th>
+                                        <th class="pb-4 text-center">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="grades-table-body">
+                                    <tr><td colspan="4" class="py-8 text-center text-gray-400">Select a student to view grades</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Grades by Subject Chart -->
+                    <div class="bg-white rounded-3xl shadow-sm p-6">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Average by Subject</p>
+                        <div id="subject-averages" class="space-y-3">
+                            <div class="text-center text-gray-400 py-8">Select a student to view subject breakdown</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Academic Summary -->
+                <div class="bg-white rounded-3xl shadow-sm p-6">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Academic Summary</p>
+                    <div id="academic-summary" class="text-center text-gray-400 py-4">
+                        Select a student to view academic summary
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Parent Portal View -->
+            <div id="view-parent" class="view-content hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Parent Portal</h2>
+                        <p class="text-gray-500 text-sm mt-1">Monitor your children's academic progress</p>
+                    </div>
+                </div>
+                
+                <!-- Children Cards -->
+                <div id="parent-children-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="text-center text-gray-400 py-8 col-span-full">Loading children data...</div>
+                </div>
+                
+                <!-- Selected Child Details -->
+                <div id="parent-child-details" class="hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 id="child-detail-name" class="text-lg font-bold text-gray-800">Child Details</h3>
+                        <button onclick="hideChildDetails()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl font-medium text-sm hover:bg-gray-200 transition-all">
+                            ← Back to Children
+                        </button>
+                    </div>
+                    
+                    <!-- Child Stats -->
+                    <div class="grid grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-2xl p-4 shadow-sm">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Class</p>
+                            <p class="text-lg font-bold text-gray-800 mt-1" id="child-class">--</p>
+                        </div>
+                        <div class="bg-violet-50 rounded-2xl p-4">
+                            <p class="text-xs font-bold text-violet-600 uppercase tracking-wider">GPA</p>
+                            <p class="text-2xl font-bold text-violet-700 mt-1" id="child-gpa">--</p>
+                        </div>
+                        <div class="bg-emerald-50 rounded-2xl p-4">
+                            <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Attendance</p>
+                            <p class="text-2xl font-bold text-emerald-700 mt-1" id="child-attendance-rate">--%</p>
+                        </div>
+                        <div class="bg-blue-50 rounded-2xl p-4">
+                            <p class="text-xs font-bold text-blue-600 uppercase tracking-wider">Total Grades</p>
+                            <p class="text-2xl font-bold text-blue-700 mt-1" id="child-grades-count">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-6">
+                        <!-- Child's Grades -->
+                        <div class="bg-white rounded-3xl shadow-sm p-6">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Recent Grades</p>
+                            <div id="child-grades-list" class="space-y-2 max-h-64 overflow-y-auto">
+                                <div class="text-center text-gray-400 py-4 text-sm">No grades available</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Child's Attendance -->
+                        <div class="bg-white rounded-3xl shadow-sm p-6">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Attendance History</p>
+                            <div id="child-attendance-stats" class="grid grid-cols-2 gap-3 mb-4">
+                                <div class="bg-emerald-50 rounded-xl p-3 text-center">
+                                    <p class="text-xs text-emerald-600 font-bold">Present</p>
+                                    <p class="text-xl font-bold text-emerald-700" id="child-present">0</p>
+                                </div>
+                                <div class="bg-red-50 rounded-xl p-3 text-center">
+                                    <p class="text-xs text-red-600 font-bold">Absent</p>
+                                    <p class="text-xl font-bold text-red-700" id="child-absent">0</p>
+                                </div>
+                                <div class="bg-amber-50 rounded-xl p-3 text-center">
+                                    <p class="text-xs text-amber-600 font-bold">Late</p>
+                                    <p class="text-xl font-bold text-amber-700" id="child-late">0</p>
+                                </div>
+                                <div class="bg-blue-50 rounded-xl p-3 text-center">
+                                    <p class="text-xs text-blue-600 font-bold">Excused</p>
+                                    <p class="text-xl font-bold text-blue-700" id="child-excused">0</p>
+                                </div>
+                            </div>
+                            <div id="child-attendance-list" class="space-y-2 max-h-32 overflow-y-auto">
+                                <div class="text-center text-gray-400 py-2 text-sm">No attendance records</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- End Parent Portal View -->
+            
         </main>
     </div>
+    
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300">
+        <div id="modal-content" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-xl w-full max-w-md p-6 transform scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between mb-6">
+                <h3 id="modal-title" class="text-lg font-semibold text-gray-800">Modal Title</h3>
+                <button onclick="hideModal()" class="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="modal-body">
+                <!-- Modal content will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
     <script>
-        // Auth Check
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || (user.role !== 'STUDENT' && user.role !== 'PARENT')) window.location.href = 'login.html';
-        document.getElementById('welcomeMsg').textContent = `Welcome, ${user.name} (${user.role})`;
-
+        // API Base URL
+        const API_BASE = '/api';
+        
+        // Current logged-in user
+        let currentUser = null;
+        
+        // Initialize Dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check authentication
+            checkAuth();
+            updateDateTime();
+            loadDashboardData();
+            setInterval(updateDateTime, 60000); // Update time every minute
+        });
+        
+        // Check if user is authenticated
+        function checkAuth() {
+            const userData = localStorage.getItem('user');
+            if (!userData) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            try {
+                currentUser = JSON.parse(userData);
+                updateUserDisplay();
+                setupRoleBasedUI();
+            } catch (e) {
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // Setup role-based UI visibility
+        function setupRoleBasedUI() {
+            if (!currentUser) return;
+            
+            const role = (currentUser.role || '').toUpperCase();
+            
+            // Hide all role-specific nav items first
+            document.querySelectorAll('.admin-only, .teacher-only, .parent-only').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Show items based on role
+            if (role === 'ADMIN') {
+                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+                document.querySelectorAll('.teacher-only').forEach(el => el.style.display = 'flex');
+                showView('dashboard');
+            } else if (role === 'TEACHER') {
+                document.querySelectorAll('.teacher-only').forEach(el => el.style.display = 'flex');
+                showView('dashboard');
+            } else if (role === 'PARENT') {
+                document.querySelectorAll('.parent-only').forEach(el => el.style.display = 'flex');
+                showView('parent');
+            } else {
+                // Default: show dashboard for other roles
+                showView('dashboard');
+            }
+        }
+        
+        // Update user display in header
+        function updateUserDisplay() {
+            if (!currentUser) return;
+            
+            // Update admin name in greeting
+            const adminNameEl = document.getElementById('admin-name');
+            if (adminNameEl) {
+                adminNameEl.textContent = currentUser.name || 'User';
+            }
+            
+            // Update profile section
+            const userNameEl = document.getElementById('user-name');
+            if (userNameEl) {
+                userNameEl.textContent = currentUser.name || 'User';
+            }
+            
+            // Update role display
+            const roleDisplay = document.getElementById('user-role-display');
+            if (roleDisplay) {
+                const roleMap = {
+                    'admin': 'Administrator',
+                    'ADMIN': 'Administrator',
+                    'teacher': 'Teacher',
+                    'TEACHER': 'Teacher',
+                    'student': 'Student',
+                    'STUDENT': 'Student',
+                    'parent': 'Parent',
+                    'PARENT': 'Parent'
+                };
+                roleDisplay.textContent = roleMap[currentUser.role] || currentUser.role;
+            }
+            
+            // Update avatar initial
+            const avatarEl = document.getElementById('user-avatar');
+            if (avatarEl && currentUser.name) {
+                avatarEl.textContent = currentUser.name.charAt(0).toUpperCase();
+            }
+        }
+        
+        // Logout function
         function logout() {
             localStorage.removeItem('user');
             window.location.href = 'login.html';
         }
-
-        // Logic
-        const profileInfo = document.getElementById('profileInfo');
-        const notificationList = document.getElementById('notificationList');
-        const gradeList = document.getElementById('gradeList');
-
-        // Determine whose data to show
-        // If Parent, we should ideally let them select a child, but for prototype we'll just show the first child found or assume they are linked.
-        // To keep it simple: If Student, show own data. If Parent, show data for *all* linked students (or just one).
-        // Let's simplify: If Parent, we need to find their children.
-        // Since the API is simple, let's just assume the logged in user is the target for notifications, 
-        // and if it's a parent, we might need an extra step.
-        // BUT, the prompt says "Student Profile... Grade Report Card".
-        // Let's assume for this prototype that if I am a Parent, I see my notifications.
-        // If I am a Student, I see my grades.
-        // Actually, let's try to show grades for the student associated with the user.
         
-        async function init() {
-            profileInfo.innerHTML = `
-                <p><strong>Name:</strong> ${user.name}</p>
-                <p><strong>Email:</strong> ${user.email}</p>
-                <p><strong>Role:</strong> ${user.role}</p>
-                <p><strong>ID:</strong> ${user.id}</p>
-            `;
-
-            loadNotifications();
-
-            if (user.role === 'STUDENT') {
-                loadGrades(user.id);
-            } else if (user.role === 'PARENT') {
-                // For prototype simplicity, we need to find the student ID linked to this parent.
-                // We don't have a direct "get children" endpoint easily exposed without filtering users.
-                // Let's fetch all students and find the one with this parentId.
-                try {
-                    const res = await fetch('/api/users?role=STUDENT');
-                    const students = await res.json();
-                    const children = students.filter(s => s.parentId === user.id);
-                    
-                    if (children.length > 0) {
-                        // Just show the first child's grades for now
-                        const child = children[0];
-                        profileInfo.innerHTML += `<hr><p><strong>Viewing Child:</strong> ${child.name}</p>`;
-                        loadGrades(child.id);
-                    } else {
-                        gradeList.innerHTML = '<li>No children found linked to this account.</li>';
-                    }
-                } catch (e) {
-                    console.error(e);
-                }
+        function updateDateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
+            
+            const hour = now.getHours();
+            let greeting = 'Good Morning';
+            if (hour >= 12 && hour < 17) greeting = 'Good Afternoon';
+            else if (hour >= 17) greeting = 'Good Evening';
+            
+            const userName = currentUser?.name || 'User';
+            document.querySelector('h1').innerHTML = `${greeting}, <span class="text-violet-600" id="admin-name">${userName}</span> 👋`;
+        }
+        
+        async function loadDashboardData() {
+            try {
+                // Load analytics data
+                const [statsRes, attendanceRes, gradeDistRes, classesRes] = await Promise.all([
+                    fetch(`${API_BASE}/analytics/user-counts`),
+                    fetch(`${API_BASE}/analytics/attendance/today`),
+                    fetch(`${API_BASE}/analytics/grades/distribution`),
+                    fetch(`${API_BASE}/classes`)
+                ]);
+                
+                const stats = await statsRes.json();
+                const attendance = await attendanceRes.json();
+                const gradeDist = await gradeDistRes.json();
+                const classes = await classesRes.json();
+                
+                // Update user counts
+                document.getElementById('total-students').textContent = stats.students || 0;
+                document.getElementById('total-teachers').textContent = stats.teachers || 0;
+                document.getElementById('total-classes').textContent = classes.length || 0;
+                
+                // Update attendance
+                const attendancePercent = attendance.rate || 0;
+                document.getElementById('attendance-percent').textContent = Math.round(attendancePercent);
+                document.getElementById('present-count').textContent = attendance.present || 0;
+                document.getElementById('total-for-attendance').textContent = attendance.total || 0;
+                
+                // Animate attendance ring
+                const ring = document.getElementById('attendance-ring');
+                const circumference = 2 * Math.PI * 40;
+                const offset = circumference - (attendancePercent / 100) * circumference;
+                setTimeout(() => {
+                    ring.style.strokeDashoffset = offset;
+                }, 100);
+                
+                // Update grade distribution
+                renderGradeDistribution(gradeDist);
+                
+                // Load GPA
+                loadAverageGPA();
+                
+                // Load activities (from notifications)
+                loadActivities();
+                
+                // Load notifications
+                loadNotifications();
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
             }
         }
-
+        
+        async function loadAverageGPA() {
+            try {
+                // Calculate average GPA from all students
+                const res = await fetch(`${API_BASE}/users?role=STUDENT`);
+                const students = await res.json();
+                
+                let totalGPA = 0;
+                let count = 0;
+                
+                for (const student of students) {
+                    try {
+                        const gpaRes = await fetch(`${API_BASE}/grades/${student.id}/gpa`);
+                        const gpaData = await gpaRes.json();
+                        if (gpaData.gpa) {
+                            totalGPA += parseFloat(gpaData.gpa);
+                            count++;
+                        }
+                    } catch (e) {}
+                }
+                
+                const avgGPA = count > 0 ? (totalGPA / count).toFixed(2) : '0.00';
+                document.getElementById('average-gpa').textContent = avgGPA;
+                
+                // Update GPA bar (out of 4.0)
+                const gpaPercent = Math.min((avgGPA / 4.0) * 100, 100);
+                document.getElementById('gpa-bar').style.width = `${gpaPercent}%`;
+                document.getElementById('gpa-percent').textContent = `${Math.round(gpaPercent)}%`;
+                
+            } catch (error) {
+                console.error('Error loading GPA:', error);
+            }
+        }
+        
+        function renderGradeDistribution(data) {
+            const container = document.getElementById('grade-distribution');
+            const grades = ['A', 'B', 'C', 'D', 'F'];
+            const colors = ['bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-orange-500', 'bg-red-500'];
+            
+            // Find max for scaling
+            const values = grades.map(g => {
+                const item = data.find(d => d.grade === g);
+                return item ? item.count : 0;
+            });
+            const max = Math.max(...values, 1);
+            
+            container.innerHTML = grades.map((grade, i) => {
+                const count = values[i];
+                const height = Math.max((count / max) * 100, 5);
+                return `
+                    <div class="flex-1 flex flex-col items-center">
+                        <span class="text-xs font-semibold text-gray-600 mb-1">${count}</span>
+                        <div class="w-full ${colors[i]} rounded-xl transition-all duration-700" style="height: ${height}%"></div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function loadActivities() {
+            try {
+                // Get recent notifications as activities
+                if (!currentUser?.id) return;
+                
+                const res = await fetch(`${API_BASE}/notifications/${currentUser.id}`);
+                const data = await res.json();
+                const notifications = data.notifications || data || [];
+                
+                const container = document.getElementById('activities-list');
+                
+                if (!notifications || notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-400 py-8">
+                            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                            <p class="text-sm">No recent activities</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const icons = {
+                    attendance: { icon: '📋', bg: 'bg-blue-100' },
+                    grade: { icon: '📊', bg: 'bg-emerald-100' },
+                    announcement: { icon: '📢', bg: 'bg-violet-100' },
+                    system: { icon: '⚙️', bg: 'bg-gray-100' },
+                    reminder: { icon: '⏰', bg: 'bg-amber-100' }
+                };
+                
+                container.innerHTML = notifications.slice(0, 5).map((n, i) => {
+                    const type = n.type || 'system';
+                    const iconData = icons[type] || icons.system;
+                    const timeAgo = getTimeAgo(n.createdAt);
+                    
+                    return `
+                        <div class="activity-item opacity-0 flex items-start gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-all cursor-pointer">
+                            <div class="w-10 h-10 ${iconData.bg} rounded-xl flex items-center justify-center flex-shrink-0">
+                                <span class="text-lg">${iconData.icon}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-800 truncate">${n.title || n.message}</p>
+                                <p class="text-xs text-gray-400 mt-0.5">${timeAgo}</p>
+                            </div>
+                            ${!n.isRead ? '<div class="w-2 h-2 bg-violet-500 rounded-full flex-shrink-0 mt-2"></div>' : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading activities:', error);
+            }
+        }
+        
         async function loadNotifications() {
             try {
-                const res = await fetch(`/api/notifications/${user.id}`);
-                const notes = await res.json();
-                notificationList.innerHTML = '';
-                if (notes.length === 0) {
-                    notificationList.innerHTML = '<li>No recent alerts.</li>';
+                if (!currentUser?.id) return;
+                
+                const [notifRes, countRes] = await Promise.all([
+                    fetch(`${API_BASE}/notifications/${currentUser.id}`),
+                    fetch(`${API_BASE}/notifications/${currentUser.id}/count`)
+                ]);
+                
+                const notifData = await notifRes.json();
+                const countData = await countRes.json();
+                
+                const notifications = notifData.notifications || notifData || [];
+                
+                // Update unread badge
+                const unreadCount = countData.unreadCount || notifData.unreadCount || 0;
+                document.getElementById('unread-count').textContent = `${unreadCount} new`;
+                
+                const badge = document.getElementById('notification-badge');
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+                
+                // Update header dropdown
+                updateNotificationDropdown(notifications);
+                
+                const container = document.getElementById('notifications-list');
+                
+                if (!notifications || notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-400 py-4">
+                            <p class="text-sm">No notifications</p>
+                        </div>
+                    `;
                     return;
                 }
-                notes.forEach(n => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <small style="color: #888;">${new Date(n.createdAt).toLocaleTimeString()}</small><br>
-                        ${n.message}
+                
+                container.innerHTML = notifications.slice(0, 4).map(n => {
+                    const isUnread = !n.isRead;
+                    return `
+                        <div class="notification-item flex items-start gap-3 p-3 rounded-2xl ${isUnread ? 'bg-violet-50' : 'hover:bg-gray-50'} transition-all cursor-pointer" onclick="markNotificationRead(${n.id})">
+                            <div class="w-2 h-2 ${isUnread ? 'bg-violet-500' : 'bg-gray-300'} rounded-full mt-2 flex-shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm ${isUnread ? 'font-medium text-gray-800' : 'text-gray-600'} truncate">${n.title || 'Notification'}</p>
+                                <p class="text-xs text-gray-400 mt-0.5 truncate">${n.message || ''}</p>
+                            </div>
+                            <span class="text-xs text-gray-400 flex-shrink-0">${getTimeAgo(n.createdAt)}</span>
+                        </div>
                     `;
-                    notificationList.appendChild(li);
-                });
-            } catch (e) {
-                notificationList.innerHTML = 'Error loading notifications.';
+                }).join('');
+                
+            } catch (error) {
+                console.error('Error loading notifications:', error);
             }
         }
-
-        async function loadGrades(studentId) {
+        
+        // Mark notification as read
+        async function markNotificationRead(notificationId) {
             try {
-                const res = await fetch(`/api/grades/${studentId}`);
-                const grades = await res.json();
-                gradeList.innerHTML = '';
-                if (grades.length === 0) {
-                    gradeList.innerHTML = '<li>No grades recorded yet.</li>';
-                    return;
-                }
-                grades.forEach(g => {
-                    const li = document.createElement('li');
-                    li.className = 'grade-item';
-                    li.innerHTML = `
-                        <span>${g.subject}</span>
-                        <span class="grade-score">${g.score}</span>
-                    `;
-                    gradeList.appendChild(li);
+                await fetch(`${API_BASE}/notifications/${notificationId}/read`, {
+                    method: 'PUT'
                 });
-            } catch (e) {
-                gradeList.innerHTML = 'Error loading grades.';
+                loadNotifications();
+                loadActivities();
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
             }
         }
-
-        init();
+        
+        // Mark all notifications as read
+        async function markAllNotificationsRead() {
+            try {
+                if (!currentUser?.id) return;
+                await fetch(`${API_BASE}/notifications/${currentUser.id}/read-all`, {
+                    method: 'PUT'
+                });
+                loadNotifications();
+                loadActivities();
+                showToast('All notifications marked as read', 'success');
+            } catch (error) {
+                console.error('Error marking all notifications as read:', error);
+            }
+        }
+        
+        // Update notification dropdown in header
+        function updateNotificationDropdown(notifications) {
+            const container = document.getElementById('notification-dropdown-list');
+            if (!container) return;
+            
+            if (!notifications || notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="px-4 py-6 text-center text-gray-400 text-sm">
+                        <svg class="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        No notifications
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = notifications.slice(0, 5).map(n => {
+                const isUnread = !n.isRead;
+                return `
+                    <div class="px-4 py-2 hover:bg-gray-50 cursor-pointer transition-all" onclick="markNotificationRead(${n.id})">
+                        <div class="flex items-start gap-2">
+                            <div class="w-2 h-2 ${isUnread ? 'bg-violet-500' : 'bg-gray-300'} rounded-full mt-1.5 flex-shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm ${isUnread ? 'font-medium text-gray-800' : 'text-gray-600'} truncate">${n.title || 'Notification'}</p>
+                                <p class="text-xs text-gray-400 truncate">${n.message || ''}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Load all notifications in modal
+        async function loadAllNotificationsModal() {
+            const container = document.getElementById('all-notifications-list');
+            if (!container || !currentUser?.id) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/notifications/${currentUser.id}`);
+                const data = await res.json();
+                const notifications = data.notifications || data || [];
+                
+                if (!notifications || notifications.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-400 py-8">
+                            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <p class="text-sm">No notifications yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const icons = {
+                    attendance: { icon: '📋', bg: 'bg-blue-100' },
+                    grade: { icon: '📊', bg: 'bg-emerald-100' },
+                    announcement: { icon: '📢', bg: 'bg-violet-100' },
+                    system: { icon: '⚙️', bg: 'bg-gray-100' },
+                    reminder: { icon: '⏰', bg: 'bg-amber-100' }
+                };
+                
+                container.innerHTML = notifications.map(n => {
+                    const isUnread = !n.isRead;
+                    const type = n.type || 'system';
+                    const iconData = icons[type] || icons.system;
+                    
+                    return `
+                        <div class="flex items-start gap-3 p-3 rounded-2xl ${isUnread ? 'bg-violet-50' : 'hover:bg-gray-50'} transition-all cursor-pointer" onclick="markNotificationRead(${n.id}); loadAllNotificationsModal();">
+                            <div class="w-10 h-10 ${iconData.bg} rounded-xl flex items-center justify-center flex-shrink-0">
+                                <span class="text-lg">${iconData.icon}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm ${isUnread ? 'font-medium text-gray-800' : 'text-gray-600'}">${n.title || 'Notification'}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">${n.message || ''}</p>
+                                <p class="text-xs text-gray-400 mt-1">${getTimeAgo(n.createdAt)}</p>
+                            </div>
+                            ${isUnread ? '<div class="w-2 h-2 bg-violet-500 rounded-full flex-shrink-0 mt-2"></div>' : ''}
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                container.innerHTML = `<div class="text-center text-red-500 py-4">Error loading notifications</div>`;
+            }
+        }
+        
+        function getTimeAgo(dateString) {
+            if (!dateString) return 'Just now';
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+            return date.toLocaleDateString();
+        }
+        
+        // Modal Functions
+        function showModal(type) {
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            const title = document.getElementById('modal-title');
+            const body = document.getElementById('modal-body');
+            
+            const modals = {
+                addStudent: {
+                    title: 'Add New Student',
+                    body: `
+                        <form onsubmit="handleAddStudent(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Full Name</label>
+                                <input type="text" name="name" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="Enter student name">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Email</label>
+                                <input type="email" name="email" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="student@school.com">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Password</label>
+                                <input type="password" name="password" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="••••••••">
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Add Student
+                            </button>
+                        </form>
+                    `
+                },
+                announcement: {
+                    title: 'Post Announcement',
+                    body: `
+                        <form onsubmit="handleAnnouncement(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Title</label>
+                                <input type="text" name="title" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="Announcement title">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Message</label>
+                                <textarea name="message" required rows="4" class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 resize-none" placeholder="Write your announcement..."></textarea>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Send Announcement
+                            </button>
+                        </form>
+                    `
+                },
+                attendance: {
+                    title: 'Mark Attendance',
+                    body: `
+                        <form onsubmit="handleAttendance(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Student ID</label>
+                                <input type="number" name="studentId" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="Enter student ID">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Status</label>
+                                <select name="status" class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                    <option value="PRESENT">Present</option>
+                                    <option value="ABSENT">Absent</option>
+                                    <option value="LATE">Late</option>
+                                    <option value="EXCUSED">Excused</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Mark Attendance
+                            </button>
+                        </form>
+                    `
+                },
+                addGrade: {
+                    title: 'Add New Grade',
+                    body: `
+                        <form onsubmit="handleAddGrade(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Student</label>
+                                <select name="studentId" id="modal-grade-student" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                    <option value="">Select a student</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Subject</label>
+                                <select name="subject" id="modal-grade-subject" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                    <option value="">Select a subject</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Score (0-100)</label>
+                                <input type="number" name="score" min="0" max="100" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="Enter score">
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Add Grade
+                            </button>
+                        </form>
+                    `
+                },
+                createClass: {
+                    title: 'Create New Class',
+                    body: `
+                        <form onsubmit="handleCreateClass(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Class Name</label>
+                                <input type="text" name="name" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="e.g., Class 10-A">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Grade Level</label>
+                                <select name="gradeLevel" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                    <option value="">Select grade level</option>
+                                    <option value="1">Grade 1</option>
+                                    <option value="2">Grade 2</option>
+                                    <option value="3">Grade 3</option>
+                                    <option value="4">Grade 4</option>
+                                    <option value="5">Grade 5</option>
+                                    <option value="6">Grade 6</option>
+                                    <option value="7">Grade 7</option>
+                                    <option value="8">Grade 8</option>
+                                    <option value="9">Grade 9</option>
+                                    <option value="10">Grade 10</option>
+                                    <option value="11">Grade 11</option>
+                                    <option value="12">Grade 12</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Section (Optional)</label>
+                                <input type="text" name="section" class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="e.g., A, B, C">
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Create Class
+                            </button>
+                        </form>
+                    `
+                },
+                createSubject: {
+                    title: 'Create New Subject',
+                    body: `
+                        <form onsubmit="handleCreateSubject(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Subject Name</label>
+                                <input type="text" name="name" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="e.g., Mathematics">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Subject Code (Optional)</label>
+                                <input type="text" name="code" class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200" placeholder="e.g., MATH101">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Credit Hours</label>
+                                <input type="number" name="creditHours" min="1" max="6" value="3" class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Create Subject
+                            </button>
+                        </form>
+                    `
+                },
+                enrollStudent: {
+                    title: 'Enroll Student',
+                    body: `
+                        <form onsubmit="handleEnrollStudent(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Select Student</label>
+                                <select name="studentId" id="modal-enroll-student" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                    <option value="">Select a student</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-emerald-600 text-white rounded-2xl font-medium hover:bg-emerald-700 transition-all">
+                                Enroll Student
+                            </button>
+                        </form>
+                    `
+                },
+                assignSubject: {
+                    title: 'Assign Subject to Class',
+                    body: `
+                        <form onsubmit="handleAssignSubject(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Select Subject</label>
+                                <select name="subjectId" id="modal-assign-subject" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                    <option value="">Select a subject</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Assign Teacher</label>
+                                <select name="teacherId" id="modal-assign-teacher" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                    <option value="">Select a teacher</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Assign Subject
+                            </button>
+                        </form>
+                    `
+                },
+                linkParent: {
+                    title: 'Link Parent to Student',
+                    body: `
+                        <form onsubmit="handleLinkParent(event)" class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Select Parent</label>
+                                <select name="parentId" id="modal-link-parent" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                    <option value="">Select a parent</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Select Student</label>
+                                <select name="studentId" id="modal-link-student" required class="w-full px-4 py-3 bg-gray-50 rounded-2xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200">
+                                    <option value="">Select a student</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-violet-600 text-white rounded-2xl font-medium hover:bg-violet-700 transition-all">
+                                Link Parent to Student
+                            </button>
+                        </form>
+                    `
+                },
+                notifications: {
+                    title: 'All Notifications',
+                    body: `<div id="all-notifications-list" class="space-y-2 max-h-96 overflow-y-auto">Loading...</div>`
+                }
+            };
+            
+            const modal = modals[type];
+            if (!modal) return;
+            
+            title.textContent = modal.title;
+            body.innerHTML = modal.body;
+            
+            // Load notifications if showing notifications modal
+            if (type === 'notifications') {
+                loadAllNotificationsModal();
+            }
+            
+            // Load students and subjects for grade modal
+            if (type === 'addGrade') {
+                loadGradeModalData();
+            }
+            
+            // Load students for enroll modal
+            if (type === 'enrollStudent') {
+                loadEnrollStudentModalData();
+            }
+            
+            // Load subjects and teachers for assign modal
+            if (type === 'assignSubject') {
+                loadAssignSubjectModalData();
+            }
+            
+            // Load parents and students for link modal
+            if (type === 'linkParent') {
+                loadLinkParentModalData();
+            }
+            
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+        
+        function hideModal() {
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            
+            overlay.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300);
+        }
+        
+        // Form Handlers
+        async function handleAddStudent(e) {
+            e.preventDefault();
+            const form = e.target;
+            const data = {
+                name: form.name.value,
+                email: form.email.value,
+                password: form.password.value,
+                role: 'STUDENT'
+            };
+            
+            try {
+                const res = await fetch(`${API_BASE}/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    loadDashboardData();
+                    showToast('Student added successfully!', 'success');
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to add student', 'error');
+                }
+            } catch (error) {
+                showToast('Error adding student', 'error');
+            }
+        }
+        
+        async function handleAnnouncement(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            try {
+                const res = await fetch(`${API_BASE}/notifications/announcement`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: form.title.value,
+                        message: form.message.value
+                    })
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    loadNotifications();
+                    loadActivities();
+                    showToast('Announcement sent to all users!', 'success');
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to send announcement', 'error');
+                }
+            } catch (error) {
+                showToast('Error sending announcement', 'error');
+            }
+        }
+        
+        async function handleAttendance(e) {
+            e.preventDefault();
+            const form = e.target;
+            const today = new Date().toISOString().split('T')[0];
+            
+            try {
+                const res = await fetch(`${API_BASE}/attendance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        date: today,
+                        attendance: [{
+                            studentId: parseInt(form.studentId.value),
+                            status: form.status.value
+                        }],
+                        teacherId: currentUser?.id || 1
+                    })
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    loadDashboardData();
+                    showToast('Attendance marked!', 'success');
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to mark attendance', 'error');
+                }
+            } catch (error) {
+                showToast('Error marking attendance', 'error');
+            }
+        }
+        
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-6 right-6 px-6 py-4 rounded-2xl shadow-lg text-white font-medium transform translate-y-4 opacity-0 transition-all duration-300 z-50 ${
+                type === 'success' ? 'bg-emerald-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-violet-600'
+            }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Close modal on overlay click
+        document.getElementById('modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-overlay') {
+                hideModal();
+            }
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideModal();
+            }
+        });
+        
+        // ========== VIEW SWITCHING ==========
+        let currentView = 'dashboard';
+        
+        function showView(viewName) {
+            // Hide all views
+            document.querySelectorAll('.view-content').forEach(v => v.classList.add('hidden'));
+            
+            // Show selected view
+            const view = document.getElementById(`view-${viewName}`);
+            if (view) {
+                view.classList.remove('hidden');
+            }
+            
+            // Update nav active state
+            document.querySelectorAll('.nav-item').forEach(n => {
+                n.classList.remove('bg-violet-50', 'text-violet-600');
+                n.classList.add('text-gray-400');
+            });
+            const activeNav = document.getElementById(`nav-${viewName}`);
+            if (activeNav) {
+                activeNav.classList.add('bg-violet-50', 'text-violet-600');
+                activeNav.classList.remove('text-gray-400');
+            }
+            
+            currentView = viewName;
+            
+            // Load view-specific data
+            if (viewName === 'attendance') {
+                initAttendanceView();
+            } else if (viewName === 'grades') {
+                initGradesView();
+            } else if (viewName === 'classes') {
+                initClassesView();
+            } else if (viewName === 'parent') {
+                initParentView();
+            }
+        }
+        
+        // ========== ATTENDANCE MODULE ==========
+        let attendanceData = {};
+        
+        function initAttendanceView() {
+            // Set today's date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('attendance-date').value = today;
+            loadStudentsForAttendance();
+        }
+        
+        async function loadStudentsForAttendance() {
+            const tbody = document.getElementById('attendance-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-400">Loading students...</td></tr>';
+            
+            try {
+                const res = await fetch(`${API_BASE}/attendance/students`);
+                const students = await res.json();
+                
+                if (!students || students.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-gray-400">No students found</td></tr>';
+                    return;
+                }
+                
+                // Initialize attendance data
+                attendanceData = {};
+                students.forEach(s => {
+                    attendanceData[s.id] = 'PRESENT'; // Default to present
+                });
+                
+                renderAttendanceTable(students);
+                updateAttendanceStats();
+                
+                // Try to load existing attendance for today
+                loadAttendanceForDate();
+                
+            } catch (error) {
+                console.error('Error loading students:', error);
+                tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-500">Error loading students</td></tr>';
+            }
+        }
+        
+        function renderAttendanceTable(students) {
+            const tbody = document.getElementById('attendance-table-body');
+            
+            tbody.innerHTML = students.map(student => {
+                const status = attendanceData[student.id] || 'PRESENT';
+                return `
+                    <tr class="border-t border-gray-100">
+                        <td class="py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center text-white font-semibold text-sm">
+                                    ${student.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span class="font-medium text-gray-800">${student.name}</span>
+                            </div>
+                        </td>
+                        <td class="py-4 text-gray-500 text-sm">${student.email}</td>
+                        <td class="py-4 text-center">
+                            <input type="radio" name="att-${student.id}" value="PRESENT" ${status === 'PRESENT' ? 'checked' : ''} 
+                                onchange="updateStudentAttendance(${student.id}, 'PRESENT')"
+                                class="w-5 h-5 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                        </td>
+                        <td class="py-4 text-center">
+                            <input type="radio" name="att-${student.id}" value="ABSENT" ${status === 'ABSENT' ? 'checked' : ''} 
+                                onchange="updateStudentAttendance(${student.id}, 'ABSENT')"
+                                class="w-5 h-5 text-red-600 focus:ring-red-500 cursor-pointer">
+                        </td>
+                        <td class="py-4 text-center">
+                            <input type="radio" name="att-${student.id}" value="LATE" ${status === 'LATE' ? 'checked' : ''} 
+                                onchange="updateStudentAttendance(${student.id}, 'LATE')"
+                                class="w-5 h-5 text-amber-600 focus:ring-amber-500 cursor-pointer">
+                        </td>
+                        <td class="py-4 text-center">
+                            <input type="radio" name="att-${student.id}" value="EXCUSED" ${status === 'EXCUSED' ? 'checked' : ''} 
+                                onchange="updateStudentAttendance(${student.id}, 'EXCUSED')"
+                                class="w-5 h-5 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function updateStudentAttendance(studentId, status) {
+            attendanceData[studentId] = status;
+            updateAttendanceStats();
+        }
+        
+        function updateAttendanceStats() {
+            const values = Object.values(attendanceData);
+            const total = values.length;
+            const present = values.filter(v => v === 'PRESENT').length;
+            const absent = values.filter(v => v === 'ABSENT').length;
+            const late = values.filter(v => v === 'LATE').length;
+            
+            document.getElementById('att-total').textContent = total;
+            document.getElementById('att-present').textContent = present;
+            document.getElementById('att-absent').textContent = absent;
+            document.getElementById('att-late').textContent = late;
+        }
+        
+        function markAllAs(status) {
+            Object.keys(attendanceData).forEach(id => {
+                attendanceData[id] = status;
+                const radio = document.querySelector(`input[name="att-${id}"][value="${status}"]`);
+                if (radio) radio.checked = true;
+            });
+            updateAttendanceStats();
+        }
+        
+        async function loadAttendanceForDate() {
+            const date = document.getElementById('attendance-date').value;
+            if (!date) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/attendance/date/${date}`);
+                const records = await res.json();
+                
+                if (records && records.length > 0) {
+                    records.forEach(record => {
+                        if (attendanceData.hasOwnProperty(record.studentId)) {
+                            attendanceData[record.studentId] = record.status;
+                            const radio = document.querySelector(`input[name="att-${record.studentId}"][value="${record.status}"]`);
+                            if (radio) radio.checked = true;
+                        }
+                    });
+                    updateAttendanceStats();
+                }
+            } catch (error) {
+                console.error('Error loading attendance for date:', error);
+            }
+        }
+        
+        async function submitBulkAttendance() {
+            const date = document.getElementById('attendance-date').value;
+            if (!date) {
+                showToast('Please select a date', 'error');
+                return;
+            }
+            
+            // Format attendance for API
+            const attendance = Object.entries(attendanceData).map(([studentId, status]) => ({
+                studentId: parseInt(studentId),
+                status: status
+            }));
+            
+            try {
+                const res = await fetch(`${API_BASE}/attendance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        date: date,
+                        attendance: attendance,
+                        teacherId: currentUser?.id || 1
+                    })
+                });
+                
+                if (res.ok) {
+                    showToast('Attendance saved successfully!', 'success');
+                    loadDashboardData(); // Refresh dashboard stats
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to save attendance', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving attendance:', error);
+                showToast('Error saving attendance', 'error');
+            }
+        }
+        
+        // ========== GRADES MODULE ==========
+        let gradesStudentList = [];
+        let gradesSubjectList = [];
+        
+        async function initGradesView() {
+            await loadGradesStudents();
+        }
+        
+        async function loadGradesStudents() {
+            try {
+                const res = await fetch(`${API_BASE}/users?role=STUDENT`);
+                const students = await res.json();
+                gradesStudentList = students;
+                
+                const select = document.getElementById('grade-student-select');
+                select.innerHTML = '<option value="">-- Select a student --</option>' +
+                    students.map(s => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('');
+                    
+            } catch (error) {
+                console.error('Error loading students for grades:', error);
+            }
+        }
+        
+        async function loadStudentGrades() {
+            const studentId = document.getElementById('grade-student-select').value;
+            const tbody = document.getElementById('grades-table-body');
+            const subjectContainer = document.getElementById('subject-averages');
+            const summaryContainer = document.getElementById('academic-summary');
+            
+            if (!studentId) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-gray-400">Select a student to view grades</td></tr>';
+                subjectContainer.innerHTML = '<div class="text-center text-gray-400 py-8">Select a student to view subject breakdown</div>';
+                summaryContainer.innerHTML = '<div class="text-center text-gray-400 py-4">Select a student to view academic summary</div>';
+                document.getElementById('student-gpa').textContent = '--';
+                document.getElementById('grade-total').textContent = '0';
+                document.getElementById('grade-average').textContent = '--';
+                document.getElementById('grade-highest').textContent = '--';
+                document.getElementById('grade-lowest').textContent = '--';
+                return;
+            }
+            
+            tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-gray-400">Loading grades...</td></tr>';
+            
+            try {
+                // Load grades, GPA, and summary in parallel
+                const [gradesRes, gpaRes, summaryRes, bySubjectRes] = await Promise.all([
+                    fetch(`${API_BASE}/grades/${studentId}`),
+                    fetch(`${API_BASE}/grades/${studentId}/gpa`),
+                    fetch(`${API_BASE}/grades/${studentId}/summary`),
+                    fetch(`${API_BASE}/grades/${studentId}/by-subject`)
+                ]);
+                
+                const grades = await gradesRes.json();
+                const gpaData = await gpaRes.json();
+                const summary = await summaryRes.json();
+                const bySubject = await bySubjectRes.json();
+                
+                // Update GPA display
+                document.getElementById('student-gpa').textContent = gpaData.gpa?.toFixed(2) || '--';
+                
+                // Update stats
+                if (grades && grades.length > 0) {
+                    const scores = grades.map(g => g.score);
+                    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                    const highest = Math.max(...scores);
+                    const lowest = Math.min(...scores);
+                    
+                    document.getElementById('grade-total').textContent = grades.length;
+                    document.getElementById('grade-average').textContent = avg.toFixed(1);
+                    document.getElementById('grade-highest').textContent = highest;
+                    document.getElementById('grade-lowest').textContent = lowest;
+                } else {
+                    document.getElementById('grade-total').textContent = '0';
+                    document.getElementById('grade-average').textContent = '--';
+                    document.getElementById('grade-highest').textContent = '--';
+                    document.getElementById('grade-lowest').textContent = '--';
+                }
+                
+                // Render grades table
+                renderGradesTable(grades);
+                
+                // Render subject averages
+                renderSubjectAverages(bySubject);
+                
+                // Render academic summary
+                renderAcademicSummary(summary);
+                
+            } catch (error) {
+                console.error('Error loading student grades:', error);
+                tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-red-500">Error loading grades</td></tr>';
+            }
+        }
+        
+        function renderGradesTable(grades) {
+            const tbody = document.getElementById('grades-table-body');
+            
+            if (!grades || grades.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-gray-400">No grades found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = grades.map(grade => {
+                const letterGrade = getLetterGrade(grade.score);
+                const gradeColor = getGradeColor(grade.score);
+                const date = grade.createdAt ? new Date(grade.createdAt).toLocaleDateString() : '--';
+                
+                return `
+                    <tr class="border-t border-gray-100">
+                        <td class="py-3">
+                            <span class="font-medium text-gray-800">${grade.subject}</span>
+                        </td>
+                        <td class="py-3 text-center">
+                            <span class="font-semibold text-gray-800">${grade.score}</span>
+                        </td>
+                        <td class="py-3 text-center">
+                            <span class="px-3 py-1 rounded-xl text-xs font-bold ${gradeColor}">${letterGrade}</span>
+                        </td>
+                        <td class="py-3 text-center text-gray-500 text-sm">${date}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function renderSubjectAverages(bySubject) {
+            const container = document.getElementById('subject-averages');
+            
+            if (!bySubject || Object.keys(bySubject).length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-8">No subject data available</div>';
+                return;
+            }
+            
+            container.innerHTML = Object.entries(bySubject).map(([subject, data]) => {
+                const avg = data.average || 0;
+                const letterGrade = getLetterGrade(avg);
+                const barWidth = Math.max(avg, 5);
+                const barColor = avg >= 90 ? 'bg-emerald-500' : avg >= 80 ? 'bg-blue-500' : avg >= 70 ? 'bg-amber-500' : avg >= 60 ? 'bg-orange-500' : 'bg-red-500';
+                
+                return `
+                    <div class="flex items-center gap-3">
+                        <span class="w-24 text-sm font-medium text-gray-700 truncate">${subject}</span>
+                        <div class="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+                            <div class="${barColor} h-full rounded-full transition-all duration-500" style="width: ${barWidth}%"></div>
+                        </div>
+                        <span class="w-12 text-right text-sm font-bold text-gray-800">${avg.toFixed(1)}</span>
+                        <span class="w-8 text-xs font-bold ${getGradeColor(avg)}">${letterGrade}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderAcademicSummary(summary) {
+            const container = document.getElementById('academic-summary');
+            
+            if (!summary) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-4">No summary available</div>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="grid grid-cols-5 gap-4 text-center">
+                    <div class="bg-gray-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Total Courses</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1">${summary.totalSubjects || 0}</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Total Grades</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1">${summary.totalGrades || 0}</p>
+                    </div>
+                    <div class="bg-emerald-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-emerald-600 uppercase">Overall Avg</p>
+                        <p class="text-2xl font-bold text-emerald-700 mt-1">${summary.overallAverage?.toFixed(1) || '--'}</p>
+                    </div>
+                    <div class="bg-violet-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-violet-600 uppercase">Simple GPA</p>
+                        <p class="text-2xl font-bold text-violet-700 mt-1">${summary.simpleGPA?.toFixed(2) || '--'}</p>
+                    </div>
+                    <div class="bg-blue-50 rounded-2xl p-4">
+                        <p class="text-xs font-bold text-blue-600 uppercase">Letter Grade</p>
+                        <p class="text-2xl font-bold text-blue-700 mt-1">${summary.overallLetterGrade || '--'}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getLetterGrade(score) {
+            if (score >= 90) return 'A';
+            if (score >= 80) return 'B';
+            if (score >= 70) return 'C';
+            if (score >= 60) return 'D';
+            return 'F';
+        }
+        
+        function getGradeColor(score) {
+            if (score >= 90) return 'bg-emerald-100 text-emerald-700';
+            if (score >= 80) return 'bg-blue-100 text-blue-700';
+            if (score >= 70) return 'bg-amber-100 text-amber-700';
+            if (score >= 60) return 'bg-orange-100 text-orange-700';
+            return 'bg-red-100 text-red-700';
+        }
+        
+        async function loadGradeModalData() {
+            try {
+                // Load students
+                const studentsRes = await fetch(`${API_BASE}/users?role=STUDENT`);
+                const students = await studentsRes.json();
+                
+                const studentSelect = document.getElementById('modal-grade-student');
+                if (studentSelect) {
+                    studentSelect.innerHTML = '<option value="">Select a student</option>' +
+                        students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                }
+                
+                // Load subjects
+                const subjectsRes = await fetch(`${API_BASE}/subjects`);
+                const subjects = await subjectsRes.json();
+                
+                const subjectSelect = document.getElementById('modal-grade-subject');
+                if (subjectSelect) {
+                    subjectSelect.innerHTML = '<option value="">Select a subject</option>' +
+                        subjects.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+                }
+                
+            } catch (error) {
+                console.error('Error loading grade modal data:', error);
+            }
+        }
+        
+        async function handleAddGrade(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            const data = {
+                studentId: parseInt(form.studentId.value),
+                subject: form.subject.value,
+                score: parseFloat(form.score.value)
+            };
+            
+            try {
+                const res = await fetch(`${API_BASE}/grades`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    showToast('Grade added successfully!', 'success');
+                    
+                    // Refresh grades if viewing same student
+                    const selectedStudent = document.getElementById('grade-student-select').value;
+                    if (selectedStudent == data.studentId) {
+                        loadStudentGrades();
+                    }
+                    
+                    // Refresh dashboard data
+                    loadDashboardData();
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to add grade', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding grade:', error);
+                showToast('Error adding grade', 'error');
+            }
+        }
+        
+        // ========== CLASSES MODULE ==========
+        let selectedClassId = null;
+        let classesData = [];
+        let subjectsData = [];
+        
+        async function initClassesView() {
+            await Promise.all([
+                loadClassesList(),
+                loadSubjectsList(),
+                loadClassesStats()
+            ]);
+        }
+        
+        async function loadClassesStats() {
+            try {
+                const [classesRes, subjectsRes, usersRes] = await Promise.all([
+                    fetch(`${API_BASE}/classes`),
+                    fetch(`${API_BASE}/subjects`),
+                    fetch(`${API_BASE}/analytics/user-counts`)
+                ]);
+                
+                const classes = await classesRes.json();
+                const subjects = await subjectsRes.json();
+                const users = await usersRes.json();
+                
+                document.getElementById('classes-total').textContent = classes.length || 0;
+                document.getElementById('subjects-total').textContent = subjects.length || 0;
+                document.getElementById('teachers-count').textContent = users.teachers || 0;
+                
+                // Calculate total enrolled students
+                let totalEnrolled = 0;
+                for (const cls of classes) {
+                    if (cls.studentCount) totalEnrolled += cls.studentCount;
+                }
+                document.getElementById('enrolled-count').textContent = totalEnrolled;
+                
+            } catch (error) {
+                console.error('Error loading classes stats:', error);
+            }
+        }
+        
+        async function loadClassesList() {
+            const container = document.getElementById('classes-list');
+            container.innerHTML = '<div class="text-center text-gray-400 py-8">Loading classes...</div>';
+            
+            try {
+                const res = await fetch(`${API_BASE}/classes`);
+                const classes = await res.json();
+                classesData = classes;
+                
+                if (!classes || classes.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-400 py-8">No classes found. Create one to get started!</div>';
+                    return;
+                }
+                
+                container.innerHTML = classes.map(cls => `
+                    <div class="p-4 rounded-2xl border border-gray-100 hover:border-violet-200 hover:bg-violet-50/50 cursor-pointer transition-all ${selectedClassId === cls.id ? 'border-violet-300 bg-violet-50' : ''}" onclick="selectClass(${cls.id})">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-violet-400 to-violet-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
+                                    ${cls.gradeLevel || 'C'}
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-800">${cls.name}</p>
+                                    <p class="text-xs text-gray-500">Grade ${cls.gradeLevel}${cls.section ? ' • Section ' + cls.section : ''}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-gray-800">${cls.studentCount || 0}</p>
+                                <p class="text-xs text-gray-400">students</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading classes:', error);
+                container.innerHTML = '<div class="text-center text-red-500 py-8">Error loading classes</div>';
+            }
+        }
+        
+        async function loadSubjectsList() {
+            const container = document.getElementById('subjects-list');
+            container.innerHTML = '<div class="text-center text-gray-400 py-8">Loading subjects...</div>';
+            
+            try {
+                const res = await fetch(`${API_BASE}/subjects`);
+                const subjects = await res.json();
+                subjectsData = subjects;
+                
+                if (!subjects || subjects.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-400 py-8">No subjects found</div>';
+                    return;
+                }
+                
+                const colors = ['bg-violet-100 text-violet-700', 'bg-blue-100 text-blue-700', 'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700', 'bg-pink-100 text-pink-700'];
+                
+                container.innerHTML = subjects.map((subj, i) => `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all">
+                        <div class="flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-lg ${colors[i % colors.length]} flex items-center justify-center text-xs font-bold">
+                                ${subj.name.substring(0, 2).toUpperCase()}
+                            </span>
+                            <span class="text-sm font-medium text-gray-700">${subj.name}</span>
+                        </div>
+                        ${subj.code ? `<span class="text-xs text-gray-400">${subj.code}</span>` : ''}
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+                container.innerHTML = '<div class="text-center text-red-500 py-8">Error loading subjects</div>';
+            }
+        }
+        
+        async function selectClass(classId) {
+            selectedClassId = classId;
+            
+            // Refresh classes list to show selection
+            loadClassesList();
+            
+            // Show and populate class details panel
+            const panel = document.getElementById('class-details-panel');
+            panel.classList.remove('hidden');
+            
+            try {
+                // Load class details
+                const [classRes, studentsRes, subjectsRes] = await Promise.all([
+                    fetch(`${API_BASE}/classes/${classId}`),
+                    fetch(`${API_BASE}/classes/${classId}/students`),
+                    fetch(`${API_BASE}/classes/${classId}/subjects`)
+                ]);
+                
+                const classData = await classRes.json();
+                const students = await studentsRes.json();
+                const subjects = await subjectsRes.json();
+                
+                // Update header
+                document.getElementById('class-detail-name').textContent = classData.name || 'Class Details';
+                document.getElementById('class-detail-grade').textContent = `Grade ${classData.gradeLevel}${classData.section ? ' • Section ' + classData.section : ''}`;
+                
+                // Render students
+                const studentsContainer = document.getElementById('class-students-list');
+                if (!students || students.length === 0) {
+                    studentsContainer.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">No students enrolled</div>';
+                } else {
+                    studentsContainer.innerHTML = students.map(s => `
+                        <div class="flex items-center justify-between p-2 rounded-xl bg-gray-50">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                                    ${s.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span class="text-sm font-medium text-gray-700">${s.name}</span>
+                            </div>
+                            <button onclick="removeStudentFromClass(${s.id})" class="text-red-400 hover:text-red-600 p-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    `).join('');
+                }
+                
+                // Render subjects
+                const subjectsContainer = document.getElementById('class-subjects-list');
+                if (!subjects || subjects.length === 0) {
+                    subjectsContainer.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">No subjects assigned</div>';
+                } else {
+                    subjectsContainer.innerHTML = subjects.map(subj => `
+                        <div class="flex items-center justify-between p-2 rounded-xl bg-gray-50">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-gradient-to-br from-violet-400 to-violet-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                                    ${subj.name.substring(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                    <span class="text-sm font-medium text-gray-700">${subj.name}</span>
+                                    ${subj.teacherName ? `<p class="text-xs text-gray-400">${subj.teacherName}</p>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+            } catch (error) {
+                console.error('Error loading class details:', error);
+            }
+        }
+        
+        function hideClassDetails() {
+            selectedClassId = null;
+            document.getElementById('class-details-panel').classList.add('hidden');
+            loadClassesList();
+        }
+        
+        async function loadEnrollStudentModalData() {
+            try {
+                const res = await fetch(`${API_BASE}/users?role=STUDENT`);
+                const students = await res.json();
+                
+                const select = document.getElementById('modal-enroll-student');
+                if (select) {
+                    select.innerHTML = '<option value="">Select a student</option>' +
+                        students.map(s => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Error loading students for enroll modal:', error);
+            }
+        }
+        
+        async function loadAssignSubjectModalData() {
+            try {
+                const [subjectsRes, teachersRes] = await Promise.all([
+                    fetch(`${API_BASE}/subjects`),
+                    fetch(`${API_BASE}/users?role=TEACHER`)
+                ]);
+                
+                const subjects = await subjectsRes.json();
+                const teachers = await teachersRes.json();
+                
+                const subjectSelect = document.getElementById('modal-assign-subject');
+                if (subjectSelect) {
+                    subjectSelect.innerHTML = '<option value="">Select a subject</option>' +
+                        subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                }
+                
+                const teacherSelect = document.getElementById('modal-assign-teacher');
+                if (teacherSelect) {
+                    teacherSelect.innerHTML = '<option value="">Select a teacher</option>' +
+                        teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Error loading assign subject modal data:', error);
+            }
+        }
+        
+        async function handleCreateClass(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            const data = {
+                name: form.name.value,
+                gradeLevel: parseInt(form.gradeLevel.value),
+                section: form.section.value || null
+            };
+            
+            try {
+                const res = await fetch(`${API_BASE}/classes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    showToast('Class created successfully!', 'success');
+                    initClassesView();
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to create class', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating class:', error);
+                showToast('Error creating class', 'error');
+            }
+        }
+        
+        async function handleCreateSubject(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            const data = {
+                name: form.name.value,
+                code: form.code.value || null,
+                creditHours: parseInt(form.creditHours.value) || 3
+            };
+            
+            try {
+                const res = await fetch(`${API_BASE}/subjects`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    showToast('Subject created successfully!', 'success');
+                    initClassesView();
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to create subject', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating subject:', error);
+                showToast('Error creating subject', 'error');
+            }
+        }
+        
+        async function handleEnrollStudent(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            if (!selectedClassId) {
+                showToast('No class selected', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/classes/${selectedClassId}/enroll`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId: parseInt(form.studentId.value) })
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    showToast('Student enrolled successfully!', 'success');
+                    selectClass(selectedClassId); // Refresh class details
+                    loadClassesStats();
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to enroll student', 'error');
+                }
+            } catch (error) {
+                console.error('Error enrolling student:', error);
+                showToast('Error enrolling student', 'error');
+            }
+        }
+        
+        async function handleAssignSubject(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            if (!selectedClassId) {
+                showToast('No class selected', 'error');
+                return;
+            }
+            
+            const data = {
+                classId: selectedClassId,
+                subjectId: parseInt(form.subjectId.value),
+                teacherId: parseInt(form.teacherId.value)
+            };
+            
+            try {
+                const res = await fetch(`${API_BASE}/subjects/assign`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    showToast('Subject assigned successfully!', 'success');
+                    selectClass(selectedClassId); // Refresh class details
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to assign subject', 'error');
+                }
+            } catch (error) {
+                console.error('Error assigning subject:', error);
+                showToast('Error assigning subject', 'error');
+            }
+        }
+        
+        async function removeStudentFromClass(studentId) {
+            if (!selectedClassId) return;
+            
+            if (!confirm('Are you sure you want to remove this student from the class?')) {
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/classes/${selectedClassId}/students/${studentId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (res.ok) {
+                    showToast('Student removed from class', 'success');
+                    selectClass(selectedClassId); // Refresh class details
+                    loadClassesStats();
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to remove student', 'error');
+                }
+            } catch (error) {
+                console.error('Error removing student:', error);
+                showToast('Error removing student', 'error');
+            }
+        }
+        
+        // ========== PARENT PORTAL MODULE ==========
+        let parentChildrenData = [];
+        let selectedChildId = null;
+        
+        async function initParentView() {
+            if (!currentUser?.id) return;
+            
+            const container = document.getElementById('parent-children-list');
+            container.innerHTML = '<div class="text-center text-gray-400 py-8 col-span-full">Loading your children\'s data...</div>';
+            
+            // Hide details panel
+            document.getElementById('parent-child-details').classList.add('hidden');
+            
+            try {
+                const res = await fetch(`${API_BASE}/parents/${currentUser.id}/dashboard`);
+                const data = await res.json();
+                parentChildrenData = data;
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 col-span-full">
+                            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-600 mb-2">No Children Linked</h3>
+                            <p class="text-gray-400 text-sm">Contact the school administrator to link your children to your account.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                renderChildrenCards(data);
+                
+            } catch (error) {
+                console.error('Error loading parent dashboard:', error);
+                container.innerHTML = '<div class="text-center text-red-500 py-8 col-span-full">Error loading data. Please try again.</div>';
+            }
+        }
+        
+        function renderChildrenCards(children) {
+            const container = document.getElementById('parent-children-list');
+            
+            container.innerHTML = children.map(child => {
+                const student = child.student;
+                const grades = child.grades || [];
+                const attendanceStats = child.attendance?.stats || {};
+                
+                // Calculate GPA
+                let gpa = '--';
+                if (grades.length > 0) {
+                    const avg = grades.reduce((sum, g) => sum + g.score, 0) / grades.length;
+                    gpa = (avg / 25).toFixed(2); // Rough GPA conversion
+                }
+                
+                // Calculate attendance rate
+                const totalAttendance = (attendanceStats.present || 0) + (attendanceStats.absent || 0) + (attendanceStats.late || 0);
+                const attendanceRate = totalAttendance > 0 
+                    ? Math.round(((attendanceStats.present || 0) / totalAttendance) * 100) 
+                    : '--';
+                
+                const className = child.class?.name || 'Not Assigned';
+                
+                return `
+                    <div class="bg-white rounded-3xl shadow-sm p-6 cursor-pointer card-hover" onclick="showChildDetails(${student.id})">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-14 h-14 bg-gradient-to-br from-violet-400 to-violet-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold">
+                                ${student.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-800">${student.name}</h3>
+                                <p class="text-sm text-gray-500">${className}</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="bg-violet-50 rounded-xl p-3 text-center">
+                                <p class="text-xs font-bold text-violet-600 uppercase">GPA</p>
+                                <p class="text-lg font-bold text-violet-700">${gpa}</p>
+                            </div>
+                            <div class="bg-emerald-50 rounded-xl p-3 text-center">
+                                <p class="text-xs font-bold text-emerald-600 uppercase">Attendance</p>
+                                <p class="text-lg font-bold text-emerald-700">${attendanceRate}%</p>
+                            </div>
+                            <div class="bg-blue-50 rounded-xl p-3 text-center">
+                                <p class="text-xs font-bold text-blue-600 uppercase">Grades</p>
+                                <p class="text-lg font-bold text-blue-700">${grades.length}</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                            <span class="text-xs text-gray-400">Click for details</span>
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function showChildDetails(childId) {
+            selectedChildId = childId;
+            
+            // Find child data
+            const childData = parentChildrenData.find(c => c.student.id === childId);
+            if (!childData) return;
+            
+            const student = childData.student;
+            const grades = childData.grades || [];
+            const attendanceRecords = childData.attendance?.records || [];
+            const attendanceStats = childData.attendance?.stats || {};
+            const classInfo = childData.class;
+            
+            // Hide children cards, show details
+            document.getElementById('parent-children-list').innerHTML = '';
+            document.getElementById('parent-child-details').classList.remove('hidden');
+            
+            // Update child name
+            document.getElementById('child-detail-name').textContent = student.name;
+            
+            // Update class info
+            document.getElementById('child-class').textContent = classInfo?.name || 'Not Assigned';
+            
+            // Calculate and update GPA
+            let gpa = '--';
+            if (grades.length > 0) {
+                const avg = grades.reduce((sum, g) => sum + g.score, 0) / grades.length;
+                gpa = (avg / 25).toFixed(2);
+            }
+            document.getElementById('child-gpa').textContent = gpa;
+            
+            // Calculate and update attendance rate
+            const totalAttendance = (attendanceStats.present || 0) + (attendanceStats.absent || 0) + (attendanceStats.late || 0);
+            const attendanceRate = totalAttendance > 0 
+                ? Math.round(((attendanceStats.present || 0) / totalAttendance) * 100) 
+                : 0;
+            document.getElementById('child-attendance-rate').textContent = `${attendanceRate}%`;
+            
+            // Update grades count
+            document.getElementById('child-grades-count').textContent = grades.length;
+            
+            // Update attendance stats
+            document.getElementById('child-present').textContent = attendanceStats.present || 0;
+            document.getElementById('child-absent').textContent = attendanceStats.absent || 0;
+            document.getElementById('child-late').textContent = attendanceStats.late || 0;
+            document.getElementById('child-excused').textContent = attendanceStats.excused || 0;
+            
+            // Render grades list
+            renderChildGrades(grades);
+            
+            // Render attendance list
+            renderChildAttendance(attendanceRecords);
+        }
+        
+        function renderChildGrades(grades) {
+            const container = document.getElementById('child-grades-list');
+            
+            if (!grades || grades.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">No grades available</div>';
+                return;
+            }
+            
+            container.innerHTML = grades.slice(0, 10).map(grade => {
+                const letterGrade = getLetterGrade(grade.score);
+                const gradeColor = getGradeColor(grade.score);
+                
+                return `
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-gray-50">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 rounded-lg ${gradeColor} text-xs font-bold">${letterGrade}</span>
+                            <span class="text-sm font-medium text-gray-700">${grade.subject}</span>
+                        </div>
+                        <span class="text-sm font-bold text-gray-800">${grade.score}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderChildAttendance(records) {
+            const container = document.getElementById('child-attendance-list');
+            
+            if (!records || records.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-2 text-sm">No attendance records</div>';
+                return;
+            }
+            
+            const statusColors = {
+                'PRESENT': 'bg-emerald-100 text-emerald-700',
+                'ABSENT': 'bg-red-100 text-red-700',
+                'LATE': 'bg-amber-100 text-amber-700',
+                'EXCUSED': 'bg-blue-100 text-blue-700'
+            };
+            
+            container.innerHTML = records.slice(0, 10).map(record => {
+                const date = record.date ? new Date(record.date).toLocaleDateString() : '--';
+                const colorClass = statusColors[record.status] || 'bg-gray-100 text-gray-700';
+                
+                return `
+                    <div class="flex items-center justify-between p-2 rounded-xl bg-gray-50">
+                        <span class="text-sm text-gray-600">${date}</span>
+                        <span class="px-2 py-1 rounded-lg ${colorClass} text-xs font-bold">${record.status}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function hideChildDetails() {
+            selectedChildId = null;
+            document.getElementById('parent-child-details').classList.add('hidden');
+            renderChildrenCards(parentChildrenData);
+        }
+        
+        // Link Parent to Student functions
+        async function loadLinkParentModalData() {
+            try {
+                const [parentsRes, studentsRes] = await Promise.all([
+                    fetch(`${API_BASE}/users?role=PARENT`),
+                    fetch(`${API_BASE}/users?role=STUDENT`)
+                ]);
+                
+                const parents = await parentsRes.json();
+                const students = await studentsRes.json();
+                
+                const parentSelect = document.getElementById('modal-link-parent');
+                if (parentSelect) {
+                    parentSelect.innerHTML = '<option value="">Select a parent</option>' +
+                        parents.map(p => `<option value="${p.id}">${p.name} (${p.email})</option>`).join('');
+                }
+                
+                const studentSelect = document.getElementById('modal-link-student');
+                if (studentSelect) {
+                    studentSelect.innerHTML = '<option value="">Select a student</option>' +
+                        students.map(s => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Error loading link parent modal data:', error);
+            }
+        }
+        
+        async function handleLinkParent(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            const parentId = form.parentId.value;
+            const studentId = form.studentId.value;
+            
+            try {
+                const res = await fetch(`${API_BASE}/parents/${parentId}/link/${studentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (res.ok) {
+                    hideModal();
+                    showToast('Parent linked to student successfully!', 'success');
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Failed to link parent', 'error');
+                }
+            } catch (error) {
+                console.error('Error linking parent:', error);
+                showToast('Error linking parent to student', 'error');
+            }
+        }
     </script>
 </body>
 </html>

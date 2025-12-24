@@ -19,6 +19,11 @@ const PORT = 3000;
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'ui')));
 
+// Root route - serve login page
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'ui', 'login-new.html'));
+});
+
 // --- API Endpoints ---
 
 // Login
@@ -556,6 +561,75 @@ app.post('/api/subjects/assign', async (req, res) => {
 });
 
 // --- ANALYTICS ENDPOINTS ---
+
+// Get user counts by role
+app.get('/api/analytics/user-counts', async (req, res) => {
+    try {
+        const stats = await AnalyticsService.getUserStats();
+        res.json({
+            students: stats.STUDENT || 0,
+            teachers: stats.TEACHER || 0,
+            parents: stats.PARENT || 0,
+            admins: stats.ADMIN || 0,
+            total: stats.total || 0
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get today's attendance summary
+app.get('/api/analytics/attendance/today', async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const attendance = await AttendanceService.getAttendanceByDate(today);
+        
+        // Count present, absent, late
+        let present = 0;
+        let absent = 0;
+        let late = 0;
+        let excused = 0;
+        
+        attendance.forEach(record => {
+            const status = record.status?.toUpperCase();
+            if (status === 'PRESENT') present++;
+            else if (status === 'ABSENT') absent++;
+            else if (status === 'LATE') late++;
+            else if (status === 'EXCUSED') excused++;
+        });
+        
+        const total = attendance.length;
+        const rate = total > 0 ? ((present + late) / total) * 100 : 0;
+        
+        res.json({
+            date: today,
+            present,
+            absent,
+            late,
+            excused,
+            total,
+            rate: Math.round(rate * 100) / 100
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get grades distribution for dashboard
+app.get('/api/analytics/grades/distribution', async (req, res) => {
+    try {
+        const distribution = await AnalyticsService.getOverallGradeDistribution();
+        // Convert to array format for the dashboard
+        const grades = ['A', 'B', 'C', 'D', 'F'];
+        const result = grades.map(grade => ({
+            grade,
+            count: distribution.counts?.[grade] || 0
+        }));
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Get overall dashboard statistics
 app.get('/api/analytics/dashboard', async (req, res) => {
