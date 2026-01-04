@@ -15,6 +15,8 @@ A comprehensive Student Management System prototype built with Node.js, Express,
 2. Navigate to the project directory
 3. Install dependencies:
 
+Note: Run the following commands in th terminal
+
 ```bash
 npm install
 ```
