@@ -1,1 +1,49 @@
+# Gradle
+.gradle/
+build/
+.gradletasknamecache
+
+# Android
+.idea/
+*.iml
+*.apk
+*.ap_
+local.properties
+
+# Kotlin
+*.kt.bak
+
+# Build outputs
+*.jar
+*.aar
+
+# IDE
+*.iws
+*.ipr
+.DS_Store
+
+# OS specific
+Thumbs.db
+.AppleDouble
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+
+# Dependencies
 node_modules/
+vendor/
+
+# Secrets
+secrets/
+.secrets
+
+# Certificates
+*.jks
+*.keystore
+*.p12
+*.pem
